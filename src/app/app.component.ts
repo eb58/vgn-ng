@@ -8,9 +8,9 @@ import { VgModelService } from './services/vg-model.service';
 })
 export class AppComponent {
   title = 'ng-four-wins';
+  state;
 
   constructor(private vg: VgModelService){
-
-
+    this.state= vg.state
   }
 }

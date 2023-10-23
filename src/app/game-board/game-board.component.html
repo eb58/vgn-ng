@@ -1,7 +1,10 @@
+
 <table id="field"  aria-describedby="board">
-    <tr *ngFor="let i of [0,1,2,3,4,5]">
-        <td *ngFor="let j of [0,1,2,3,4,5,6]">
-            aa
+    <tr *ngFor="let row of range(6)">
+        <td *ngFor="let col of range(7)" 
+            [class]="getClass(row, col)"
+            (click)="onClick(col)"
+            >
         </td>
     </tr>
 </table>

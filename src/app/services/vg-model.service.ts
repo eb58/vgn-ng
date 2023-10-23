@@ -6,6 +6,7 @@ const clone = (a:{}) => JSON.parse(JSON.stringify(a));
 const cloneState = (state:STATE) => clone(state);
 
 export interface STATE{
+  board: number[];
   hcol: number[];
   grstate: GR[];
   whosTurn: number,
@@ -41,6 +42,7 @@ export class VgModelService {
   };
 
    origState:STATE = { // state that is used for evaluating 
+    board: [],
     hcol: this.rangeNCOL.map(() => 0), // height of cols = [0,0,0,...,0];
     grstate: this.vgmodelstatic.gr.map((g) => ({...g, occupiedBy: this.STYP.empty, cnt: 0 })),
     whosTurn: this.origStateOfGame.whoBegins === 'player1' ? this.STYP.player1 : this.STYP.player2,
@@ -71,22 +73,22 @@ export class VgModelService {
     return this.STYP.neutral;
   }
 
-  move = (c:number, mstate:STATE) => {
-    mstate = mstate || this.state;
+  move = (c:number, mstate:STATE = this.state) => {
 
     if (mstate.isMill || mstate.hcol[c] === this.NROW) {
-      return 'notallowed';
+      throw Error( 'notallowed');
     }
 
     // update state of gewinnreihen attached in move c
-    const grs = this.vgmodelstatic.grs[c + this.NCOL * mstate.hcol[c]] || [];
-    grs.forEach((gr:GR) => {
+    (this.vgmodelstatic.grs[c +  this.NCOL* mstate.hcol[c]] || []).forEach(i => {
+      const gr = mstate.grstate[i];
       gr.occupiedBy = this.transitionGR(mstate.whosTurn, gr.occupiedBy);
       gr.cnt += (gr.occupiedBy !== this.STYP.neutral)?1:0;
       if (gr.cnt >= 4) {
         mstate.isMill = true; // !!!
       }
     });
+    mstate.board[c + this.NCOL*mstate.hcol[c]] = mstate.whosTurn
     mstate.cntMoves += 1;
     mstate.hcol[c] += 1;
     mstate.whosTurn = mstate.whosTurn === this.STYP.player1 ?this.STYP.player2 : this.STYP.player1;

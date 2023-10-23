@@ -17,7 +17,7 @@ export class VgModelStaticService {
   DIM = { NCOL: 7, NROW: 6 };
   STYP = { empty: 0, player1: 1, player2: 2, neutral: 3 };
   gr: GR[] = []; // Gewinnreihen
-  grs: GR[][] = []; // Gewinnreihen pro Feld  
+  grs:number[][] = []; // Gewinnreihen pro Feld  
 
   constructor() { 
     this.initGRs();
@@ -25,7 +25,7 @@ export class VgModelStaticService {
 
   dump = () => {
     console.log("GR",     this.gr )
-    this.gr.forEach(o => console.log("gr: " + o.arr + ' val: ' + o.val));
+    this.gr.forEach(o => console.log("gr: " + JSON.stringify(o)));
     this.grs.forEach((o, i) => console.log("grs: ", i, o));
   }
 
@@ -58,9 +58,9 @@ export class VgModelStaticService {
     })
 
     range(this.DIM.NCOL * this.DIM.NROW).forEach(i => {
-      // TODO this.grs[i] = this.gr.reduce((acc, g, j) => g.arr.includes(i) ? [...acc, j] : acc, []);
+      this.grs[i] = this.gr.reduce((acc:number[], g:GR, j:number) => g.arr.includes(i) ? [...acc, j] : acc, []);
     })
-    this.dump();
+    // this.dump();
   }
 
   // debug and test
