@@ -1,0 +1,35 @@
+
+#field table {
+    background-color: #070;
+    width: 90%;
+}
+
+#field td {
+    border-collapse: separate;
+    border: 2px solid #070;
+    padding-bottom: 15%;
+    /* = width for a square aspect ratio */
+    background: #ddd;
+    border-radius: 50%;
+}
+
+#field td.player1 { background: #a00;}
+#field td.player2 { background: #00a;}
+
+#field.button {
+    display: block;
+    width: 95%;
+    margin-bottom: 5px;
+}
+
+#field.col1 {
+    float: left;
+    width: 300px;
+}
+
+#field.col2 {
+    background: #c4ced3;
+    margin-left: 25em;
+    width: 200px;
+    padding: 10px;
+}
