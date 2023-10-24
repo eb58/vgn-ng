@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import { STATE, VgModelService } from '../services/vg-model.service';
 import { DIM, FieldOccupiedType, range } from '../services/vg-model-static.service';
 import { DialogOverviewExampleDialog } from '../components/info-dialog/info-dialog.component';
-import { DialogPosition, MatDialog } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-game-board',
@@ -38,6 +38,7 @@ export class GameBoardComponent {
         return;
       }
 
+      // Führe Zug für Computer aus:
       const res2 = this.vg.move(this.vg.bestMove())
       if (res2 === 'isMill') {
         this.openDialog("Bedaure, du hast verloren!")
@@ -49,6 +50,8 @@ export class GameBoardComponent {
       }
     }
   }
+  
+  undo = ()=> this.vg.undo()
 
   getClass = (row: number, col: number): string => {
     const x = col + this.vg.NCOL * (this.vg.NROW - row - 1);

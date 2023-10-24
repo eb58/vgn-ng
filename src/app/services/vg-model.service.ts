@@ -5,12 +5,12 @@ const clone = (a: {}) => JSON.parse(JSON.stringify(a));
 const cloneState = (state: STATE) => clone(state);
 
 export interface STATEOFGAME {
-  whoBegins: string,      // Wer fängt an 'player1' oder 'player2'
-  maxLev: number,         // Spielstärke
-  courseOfGame: number[], // Spielzüge: Liste der Spalten in die ein Stein geworfen wird 
+  whoBegins: string,  // Wer fängt an 'player1' oder 'player2'
+  maxLev: number,     // Spielstärke
 }
 
 export interface STATE {
+  moves: number[],             // Spielzüge (Liste der Spalten in die ein Stein geworfen wird.) 
   board: FieldOccupiedType[];  // Spielfeldbelegung
   hcol: number[];              // Höhe der Spalten
   grstate: GR[];               // Zusatnd der Gewinnreihen
@@ -24,11 +24,8 @@ export interface STATE {
   providedIn: 'root'
 })
 export class VgModelService {
-
-  constructor(private vgmodelstatic: VgModelStaticService) {
-    this.state = cloneState(this.origState);
-    this.stateOfGame = clone(this.origStateOfGame);
-  }
+  state: STATE;
+  stateOfGame: STATEOFGAME;
 
   MAXVAL = 100000;
   NCOL = DIM.NCOL;
@@ -39,10 +36,10 @@ export class VgModelService {
   origStateOfGame: STATEOFGAME = {
     whoBegins: 'player1',
     maxLev: 4,
-    courseOfGame: [],
   };
 
   origState: STATE = { // state that is used for evaluating 
+    moves: [],
     board: [],
     hcol: this.rangeNCOL.map(() => 0), // height of cols = [0,0,0,...,0];
     grstate: this.vgmodelstatic.gr.map((g) => ({ ...g, occupiedBy: FieldOccupiedType.empty, cnt: 0 })),
@@ -52,8 +49,11 @@ export class VgModelService {
     cntMoves: 0,
   };
 
-  state: STATE;
-  stateOfGame: STATEOFGAME;
+  constructor(private vgmodelstatic: VgModelStaticService) {
+    this.state = cloneState(this.origState);
+    this.stateOfGame = clone(this.origStateOfGame);
+    this.init(this.origStateOfGame.whoBegins)
+  }
 
   init = (whoBegins: string) => {
     this.state = cloneState(this.origState);
@@ -88,6 +88,7 @@ export class VgModelService {
         mstate.isMill = true; // !!!
       }
     });
+    mstate.moves.push(c);
     mstate.board[c + this.NCOL * mstate.hcol[c]] = mstate.whosTurn === 'player1' ? FieldOccupiedType.player1 : FieldOccupiedType.player2;
     mstate.cntMoves += 1;
     mstate.hcol[c] += 1;
@@ -150,5 +151,14 @@ export class VgModelService {
     // there is no best move, just take first possible,
     return this.possibleMoves(this.state)[0]
   }
+
+  undo() {
+    console.log( this.state.moves)
+    const moves = this.state.moves.slice(0,-2);
+    console.log( moves)
+    this.init(this.stateOfGame.whoBegins);
+    moves.forEach(m => this.move(m))
+  }
+
 
 }
