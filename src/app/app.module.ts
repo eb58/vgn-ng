@@ -9,11 +9,15 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon'
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { QuestionDialogComponent } from './components/question-dialog/question-dialog.component';
+import { SettingsDialogComponent } from './components/settings-dialog/settings-dialog.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     GameBoardComponent,
+    QuestionDialogComponent,
+    SettingsDialogComponent,
   ],
   imports: [
     MatButtonModule,

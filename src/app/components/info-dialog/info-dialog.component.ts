@@ -16,9 +16,9 @@ export interface DialogData {
   standalone: true,
   imports: [MatDialogModule, MatFormFieldModule, MatInputModule, FormsModule, MatButtonModule],
 })
-export class DialogOverviewExampleDialog {
+export class InfoDialog {
   constructor(
-    public dialogRef: MatDialogRef<DialogOverviewExampleDialog>,
+    public dialogRef: MatDialogRef<InfoDialog>,
     @Inject(MAT_DIALOG_DATA) public data: DialogData,
   ) { }
 }

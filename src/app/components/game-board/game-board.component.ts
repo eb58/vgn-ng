@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
 import { STATE, VgModelService } from '../../services/vg-model.service';
 import { DIM, FieldOccupiedType, range } from '../../services/vg-model-static.service';
-import { DialogOverviewExampleDialog } from '../info-dialog/info-dialog.component';
+import { InfoDialog } from '../info-dialog/info-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
+import { QuestionDialogComponent } from '../question-dialog/question-dialog.component';
+import { Observable, filter } from 'rxjs';
 
 @Component({
   selector: 'app-game-board',
@@ -22,8 +24,15 @@ export class GameBoardComponent {
 
   openDialog(info: string): void {
     const position = { top: '50%', left: '30%' }
-    this.dialog.open(DialogOverviewExampleDialog, { position, data: { title: "Info", info } });
+    this.dialog.open(InfoDialog, { position, data: { title: "Info", info } });
   }
+
+  openQuestionDialog(question: string): Observable<any> {
+    const position = { top: '50%', left: '30%' }
+    const dialogRef = this.dialog.open(QuestionDialogComponent, { position, data: { title: "Frage", question } });
+    return dialogRef.afterClosed()
+  }
+
 
   onClick = (c: number) => {
     this.info = ""
@@ -50,10 +59,12 @@ export class GameBoardComponent {
       }
     }
   }
-  
-  undo = ()=> this.vg.undo()
+
+  undo = () => this.vg.undo()
   restart = () => {
-    this.vg.restart();
+    this.openQuestionDialog("Wirklich neu starten?")
+      .pipe(filter(res => res === "ja"))
+      .subscribe(() => this.vg.restart())
   }
 
   getClass = (row: number, col: number): string => {
