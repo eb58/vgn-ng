@@ -1,6 +1,8 @@
 import { Component, Input } from '@angular/core';
 import { STATE, VgModelService } from '../services/vg-model.service';
 import { DIM, FieldOccupiedType, range } from '../services/vg-model-static.service';
+import { DialogOverviewExampleDialog } from '../components/info-dialog/info-dialog.component';
+import { DialogPosition, MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-game-board',
@@ -8,35 +10,41 @@ import { DIM, FieldOccupiedType, range } from '../services/vg-model-static.servi
   styleUrls: ['./game-board.component.css']
 })
 export class GameBoardComponent {
+  info = 'Bitte klicke in die Spalte, in die du einen Stein einwerfen möchtest.'
 
   state: STATE;
   NROW = range(DIM.NROW);
   NCOL = range(DIM.NCOL);
 
-  constructor(private vg: VgModelService) {
+  constructor(private vg: VgModelService, public dialog: MatDialog) {
     this.state = vg.state
   }
 
-  onClick = (c: number) => {
+  openDialog(info: string): void {
+    const position = { top: '50%', left: '30%' }
+    this.dialog.open(DialogOverviewExampleDialog, { position, data: { title: "Info", info } });
+  }
 
+  onClick = (c: number) => {
+    this.info = ""
     if (this.state.whosTurn === "player1") {
       const res1 = this.vg.move(c)
       if (res1 === 'isMill') {
-        alert("Gratuliere, du hast gewonnen!");
+        this.openDialog("Gratuliere, du hast gewonnen!")
         return;
       }
       if (res1 === 'isDraw') {
-        alert("Gratuliere, du hast ein Remis geschafft !");
+        this.openDialog("Gratuliere, du hast ein Remis geschafft !");
         return;
       }
 
       const res2 = this.vg.move(this.vg.bestMove())
       if (res2 === 'isMill') {
-        alert("Bedaure, du hast verloren!");
+        this.openDialog("Bedaure, du hast verloren!")
         return;
       }
       if (res2 === 'isDraw') {
-        alert("Gratuliere, du hast ein Remis geschafft !");
+        this.openDialog("Gratuliere, du hast ein Remis geschafft !");
         return;
       }
     }

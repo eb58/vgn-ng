@@ -1,5 +1,15 @@
-<table id="field" aria-describedby="board">
-    <tr *ngFor="let row of NROW">
-        <td *ngFor="let col of NCOL" [class]="getClass(row, col)" (click)="onClick(col)">        </td>
-    </tr>
-</table>
+<mat-card>
+    <mat-card-content>
+        <h2>Vier Gewinnt</h2>
+    </mat-card-content>
+    <mat-card-content>
+        <table id="field" aria-describedby="board">
+            <tr *ngFor="let row of NROW">
+                <td *ngFor="let col of NCOL" [class]="getClass(row, col)" (click)="onClick(col)"> </td>
+            </tr>
+        </table>
+    </mat-card-content>
+    <mat-card-content>
+        <p>{{info}}</p>
+    </mat-card-content>
+</mat-card>
