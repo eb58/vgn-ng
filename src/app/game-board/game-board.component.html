@@ -1,10 +1,5 @@
-
-<table id="field"  aria-describedby="board">
-    <tr *ngFor="let row of range(6)">
-        <td *ngFor="let col of range(7)" 
-            [class]="getClass(row, col)"
-            (click)="onClick(col)"
-            >
-        </td>
+<table id="field" aria-describedby="board">
+    <tr *ngFor="let row of NROW">
+        <td *ngFor="let col of NCOL" [class]="getClass(row, col)" (click)="onClick(col)">        </td>
     </tr>
 </table>
