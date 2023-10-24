@@ -4,7 +4,7 @@ import { range, FieldOccupiedType, GR, VgModelStaticService, DIM } from './vg-mo
 const clone = (a: {}) => JSON.parse(JSON.stringify(a));
 const cloneState = (state: STATE) => clone(state);
 
-export interface STATE_OF_GAME {
+export interface STATEOFGAME {
   whoBegins: string,      // Wer fängt an 'player1' oder 'player2'
   maxLev: number,         // Spielstärke
   courseOfGame: number[], // Spielzüge: Liste der Spalten in die ein Stein geworfen wird 
@@ -36,7 +36,7 @@ export class VgModelService {
   rangeNCOL = range(this.NCOL);
   ORDER = [3, 4, 2, 5, 1, 6, 0];
 
-  origStateOfGame: STATE_OF_GAME = {
+  origStateOfGame: STATEOFGAME = {
     whoBegins: 'player1',
     maxLev: 4,
     courseOfGame: [],
@@ -53,7 +53,7 @@ export class VgModelService {
   };
 
   state: STATE;
-  stateOfGame: STATE_OF_GAME;
+  stateOfGame: STATEOFGAME;
 
   init = (whoBegins: string) => {
     this.state = cloneState(this.origState);
