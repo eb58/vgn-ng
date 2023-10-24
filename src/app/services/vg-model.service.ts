@@ -158,5 +158,9 @@ export class VgModelService {
     moves.forEach(m => this.move(m))
   }
 
+  restart() {
+    this.init(this.stateOfGame.whoBegins);
+  }
+
 
 }

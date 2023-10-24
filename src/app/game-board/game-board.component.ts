@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
 import { STATE, VgModelService } from '../services/vg-model.service';
 import { DIM, FieldOccupiedType, range } from '../services/vg-model-static.service';
 import { DialogOverviewExampleDialog } from '../components/info-dialog/info-dialog.component';
@@ -52,6 +52,9 @@ export class GameBoardComponent {
   }
   
   undo = ()=> this.vg.undo()
+  restart = () => {
+    this.vg.restart();
+  }
 
   getClass = (row: number, col: number): string => {
     const x = col + this.vg.NCOL * (this.vg.NROW - row - 1);
