@@ -153,9 +153,7 @@ export class VgModelService {
   }
 
   undo() {
-    console.log( this.state.moves)
     const moves = this.state.moves.slice(0,-2);
-    console.log( moves)
     this.init(this.stateOfGame.whoBegins);
     moves.forEach(m => this.move(m))
   }
