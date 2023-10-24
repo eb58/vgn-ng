@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
-import { STATE, VgModelService } from '../services/vg-model.service';
-import { DIM, FieldOccupiedType, range } from '../services/vg-model-static.service';
-import { DialogOverviewExampleDialog } from '../components/info-dialog/info-dialog.component';
+import { STATE, VgModelService } from '../../../services/vg-model.service';
+import { DIM, FieldOccupiedType, range } from '../../../services/vg-model-static.service';
+import { DialogOverviewExampleDialog } from '../info-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 
 @Component({
