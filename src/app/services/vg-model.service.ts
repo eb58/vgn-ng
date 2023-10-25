@@ -64,7 +64,7 @@ export class VgModelService {
 
   possibleMoves = (state: STATE) => this.rangeNCOL.filter(c => state.hcol[c] < this.NROW);
 
-  transitionGR = (e: number, a: number): number => { // e eingang   a ausgang
+  transitionGR = (e: FieldOccupiedType, a: FieldOccupiedType): FieldOccupiedType => { // e eingang   a ausgang
     if (a === FieldOccupiedType.empty)
       return e;
     if (a === e)
@@ -127,9 +127,9 @@ export class VgModelService {
     const valuesOfMoves = this.rangeNCOL.map(() => alpha);
 
     for (const m of moves) {
-      const lstate = cloneState(state);
-      this.move(m, lstate);
-      const val = -this.miniMax(lstate, lev - 1, -beta, -maxVal);
+      const clonedState = cloneState(state);
+      this.move(m, clonedState);
+      const val = -this.miniMax(clonedState, lev - 1, -beta, -maxVal);
       valuesOfMoves[m] = val;
       if (val > maxVal) {
         maxVal = val;
