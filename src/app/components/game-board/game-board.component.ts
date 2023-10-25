@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
-import { STATE, VgModelService } from '../../services/vg-model.service';
+import { STATE, STATEOFGAME, VgModelService } from '../../services/vg-model.service';
 import { DIM, FieldOccupiedType, range } from '../../services/vg-model-static.service';
 import { InfoDialog } from '../info-dialog/info-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { QuestionDialogComponent } from '../question-dialog/question-dialog.component';
 import { Observable, filter } from 'rxjs';
+import { SettingsDialogComponent } from '../settings-dialog/settings-dialog.component';
 
 @Component({
   selector: 'app-game-board',
@@ -15,11 +16,13 @@ export class GameBoardComponent {
   info = 'Bitte klicke in die Spalte, in die du einen Stein einwerfen möchtest.'
 
   state: STATE;
+  stateOfGame: STATEOFGAME;
   NROW = range(DIM.NROW);
   NCOL = range(DIM.NCOL);
 
   constructor(private vg: VgModelService, public dialog: MatDialog) {
     this.state = vg.state
+    this.stateOfGame = vg.stateOfGame
   }
 
   openDialog(info: string): void {
@@ -33,6 +36,11 @@ export class GameBoardComponent {
     return dialogRef.afterClosed()
   }
 
+  openSettingsDialog(stateOfGame: STATEOFGAME): Observable<any> {
+    const position = { top: '50%', left: '30%' }
+    const dialogRef = this.dialog.open(SettingsDialogComponent, { position, data: stateOfGame });
+    return dialogRef.afterClosed()
+  }
 
   onClick = (c: number) => {
     this.info = ""
@@ -60,11 +68,18 @@ export class GameBoardComponent {
     }
   }
 
-  undo = () => this.vg.undo()
-  restart = () => {
+  undoMove = () => this.vg.undo()
+
+  restartGame = () => {
     this.openQuestionDialog("Wirklich neu starten?")
       .pipe(filter(res => res === "ja"))
       .subscribe(() => this.vg.restart())
+  }
+
+  openSettings = () => {
+    this.openSettingsDialog(this.vg.origStateOfGame)
+      .pipe(filter(res => !!res))
+      .subscribe(res => this.stateOfGame = res)
   }
 
   getClass = (row: number, col: number): string => {

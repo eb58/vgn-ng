@@ -139,7 +139,7 @@ export class VgModelService {
         }
       }
     }
-    // console.log('LEV:', lev, 'VALS:', valuesOfMoves, 'MAXVAL:', maxVal, 'BESTMOVE', state.bestMove)
+    if (lev === this.stateOfGame.maxLev) console.log('LEV:', lev, 'VALS:', valuesOfMoves, 'MAXVAL:', maxVal, 'BESTMOVE', state.bestMove)
     return maxVal;
   }
 
@@ -153,7 +153,7 @@ export class VgModelService {
   }
 
   undo() {
-    const moves = this.state.moves.slice(0,-2);
+    const moves = this.state.moves.slice(0, -2);
     this.init(this.stateOfGame.whoBegins);
     moves.forEach(m => this.move(m))
   }

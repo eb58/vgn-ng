@@ -11,7 +11,10 @@ import { MatIconModule } from '@angular/material/icon'
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { QuestionDialogComponent } from './components/question-dialog/question-dialog.component';
 import { SettingsDialogComponent } from './components/settings-dialog/settings-dialog.component';
-
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { FormsModule } from '@angular/forms';
 @NgModule({
   declarations: [
     AppComponent,
@@ -20,11 +23,15 @@ import { SettingsDialogComponent } from './components/settings-dialog/settings-d
     SettingsDialogComponent,
   ],
   imports: [
+    FormsModule,
     MatButtonModule,
     MatDialogModule,
     MatTooltipModule,
     MatCardModule,
     MatIconModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    MatInputModule,
     BrowserModule,
     BrowserAnimationsModule
   ],

@@ -62,6 +62,6 @@ export class VgModelStaticService {
     range(DIM.NCOL * DIM.NROW).forEach(i => {
       this.grs[i] = this.gr.reduce((acc: number[], g: GR, j: number) => g.arr.includes(i) ? [...acc, j] : acc, []);
     })
-    this.dump();
+    // this.dump();
   }
 }
