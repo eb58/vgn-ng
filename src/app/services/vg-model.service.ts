@@ -35,7 +35,7 @@ export class VgModelService {
 
   origStateOfGame: STATEOFGAME = {
     whoBegins: 'player1',
-    maxLev: 4,
+    maxLev: 6,
   };
 
   origState: STATE = { // state that is used for evaluating 
@@ -85,7 +85,7 @@ export class VgModelService {
       gr.occupiedBy = this.transitionGR(occupy, gr.occupiedBy);
       gr.cnt += (gr.occupiedBy !== FieldOccupiedType.neutral) ? 1 : 0;
       if (gr.cnt >= 4) {
-        mstate.isMill = true; // !!!
+        mstate.isMill = true; 
       }
     });
     mstate.moves.push(c);
@@ -100,7 +100,7 @@ export class VgModelService {
   computeValOfNode = (state: any) => {
     const v = state.grstate.reduce((acc: number, gr: GR) => {
       const n = gr.cnt || 1;
-      const factor = 1; //  n === 3 ? vgmodelstatic.gr.val : 1;
+      const factor = n === 3 ? gr.val : 1;
       return acc
         + (gr.occupiedBy === FieldOccupiedType.player1 ? n * n * n * factor : 0)
         - (gr.occupiedBy === FieldOccupiedType.player2 ? n * n * n * factor : 0);
@@ -139,7 +139,7 @@ export class VgModelService {
         }
       }
     }
-    if (lev === this.stateOfGame.maxLev) console.log('LEV:', lev, 'VALS:', valuesOfMoves, 'MAXVAL:', maxVal, 'BESTMOVE', state.bestMove)
+    if (lev === this.stateOfGame.maxLev) console.log( 'BESTMOVE', state.bestMove, 'MAXVAL:', maxVal, 'VALS:', valuesOfMoves, state.moves)
     return maxVal;
   }
 
@@ -162,5 +162,16 @@ export class VgModelService {
     this.init(this.stateOfGame.whoBegins);
   }
 
+  dumpBoard() {
+    const s = range(this.NROW).reduce((acc1, r) => {
+      return acc1 + range(this.NCOL).reduce((acc2, c) => {
+        const x = c + this.NCOL * (this.NROW - r - 1);
+        if (this.state.board[x] === 1) return  acc2 + " X ";
+        if (this.state.board[x] === 2) return  acc2 + " O "
+        return acc2 + " _ ";
+      }, "") + "\n"
+    }, "")
+    console.log( "\n"+ s)
+  }
 
 }
