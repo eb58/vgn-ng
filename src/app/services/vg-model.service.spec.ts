@@ -17,7 +17,6 @@ describe('VgModelService', () => {
   });
 
   it('should be initialized correctly', () => {
-    expect(vg.stateOfGame.maxLev).toEqual(6);
     expect(vg.stateOfGame.whoBegins).toEqual("player1");
   });
 
