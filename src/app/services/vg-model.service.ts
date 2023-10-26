@@ -28,9 +28,7 @@ export class VgModelService {
   stateOfGame: STATEOFGAME;
 
   MAXVAL = 100000;
-  NCOL = DIM.NCOL;
-  NROW = DIM.NROW;
-  rangeNCOL = range(this.NCOL);
+  rangeNCOL = range(DIM.NCOL);
   ORDER = [3, 4, 2, 5, 1, 6, 0];
 
   origStateOfGame: STATEOFGAME = {
@@ -62,7 +60,7 @@ export class VgModelService {
     this.stateOfGame.whoBegins = whoBegins;
   }
 
-  possibleMoves = (state: STATE) => this.rangeNCOL.filter(c => state.hcol[c] < this.NROW);
+  possibleMoves = (state: STATE) => this.rangeNCOL.filter(c => state.hcol[c] < DIM.NROW);
 
   transitionGR = (e: FieldOccupiedType, a: FieldOccupiedType): FieldOccupiedType => { // e eingang   a ausgang
     if (a === FieldOccupiedType.empty)
@@ -72,14 +70,20 @@ export class VgModelService {
     return FieldOccupiedType.neutral;
   }
 
-  move = (c: number, mstate: STATE = this.state) => {
+  move = (c: number, mstate: STATE = this.state):string => {
 
-    if (mstate.isMill || mstate.hcol[c] === this.NROW) {
+    if ( mstate.hcol[c] === DIM.NROW) {
       throw Error(`Die Spalte ${c} ist voll`);
     }
+    
+    if ( mstate.isMill ){
+      console.log( "ISMILL")
+      return 'isMill';
+
+    } 
 
     // update state of gewinnreihen attached in move c
-    (this.vgmodelstatic.grs[c + this.NCOL * mstate.hcol[c]] || []).forEach(i => {
+    this.vgmodelstatic.grs[c + DIM.NCOL * mstate.hcol[c]] .forEach(i => {
       const gr = mstate.grstate[i];
       const occupy = mstate.whosTurn === 'player1' ? FieldOccupiedType.player1 : FieldOccupiedType.player2;
       gr.occupiedBy = this.transitionGR(occupy, gr.occupiedBy);
@@ -89,12 +93,12 @@ export class VgModelService {
       }
     });
     mstate.moves.push(c);
-    mstate.board[c + this.NCOL * mstate.hcol[c]] = mstate.whosTurn === 'player1' ? FieldOccupiedType.player1 : FieldOccupiedType.player2;
+    mstate.board[c + DIM.NCOL * mstate.hcol[c]] = mstate.whosTurn === 'player1' ? FieldOccupiedType.player1 : FieldOccupiedType.player2;
     mstate.cntMoves += 1;
     mstate.hcol[c] += 1;
     mstate.whosTurn = mstate.whosTurn === "player1" ? "player2" : "player1";
 
-    return mstate.isMill ? 'isMill' : (mstate.cntMoves === this.NROW * this.NCOL ? 'isDraw' : 'notallowed');
+    return mstate.isMill ? 'isMill' : (mstate.cntMoves === DIM.NROW * DIM.NCOL ? 'isDraw' : 'notallowed');
   }
 
   computeValOfNode = (state: any) => {
@@ -163,9 +167,9 @@ export class VgModelService {
   }
 
   dumpBoard() {
-    const s = range(this.NROW).reduce((acc1, r) => {
-      return acc1 + range(this.NCOL).reduce((acc2, c) => {
-        const x = c + this.NCOL * (this.NROW - r - 1);
+    const s = range(DIM.NROW).reduce((acc1, r) => {
+      return acc1 + range(DIM.NCOL).reduce((acc2, c) => {
+        const x = c + DIM.NCOL * (DIM.NROW - r - 1);
         if (this.state.board[x] === 1) return  acc2 + " X ";
         if (this.state.board[x] === 2) return  acc2 + " O "
         return acc2 + " _ ";

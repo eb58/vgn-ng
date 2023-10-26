@@ -7,7 +7,7 @@ import { QuestionDialogComponent } from '../question-dialog/question-dialog.comp
 import { Observable, filter } from 'rxjs';
 import { SettingsDialogComponent } from '../settings-dialog/settings-dialog.component';
 
-const doMoves = (s: VgModelService, moves: number[]) => moves.forEach(v => s.move(v));
+export const doMoves = (vg: VgModelService, moves: number[]) => moves.forEach(v => vg.move(v));
 
 @Component({
   selector: 'app-game-board',
@@ -89,7 +89,7 @@ export class GameBoardComponent {
   }
 
   getClass = (row: number, col: number): string => {
-    const x = col + this.vg.NCOL * (this.vg.NROW - row - 1);
+    const x = col + DIM.NCOL * (DIM.NROW - row - 1);
     // console.log( row, col, x, this.vg.state.grstate[x].occupiedBy)
     if (this.vg.state.board[x] === FieldOccupiedType.player1) return "player1"
     if (this.vg.state.board[x] === FieldOccupiedType.player2) return "player2"

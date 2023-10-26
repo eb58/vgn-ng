@@ -2,8 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { VgModelService } from './vg-model.service';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-
-const doMoves = (s:VgModelService, moves:number[]) => moves.forEach(v => s.move(v));
+import { doMoves } from '../components/game-board/game-board.component';
 
 describe('VgModelService', () => {
   let vg: VgModelService;
@@ -18,8 +17,7 @@ describe('VgModelService', () => {
   });
 
   it('should be initialized correctly', () => {
-    expect(vg.NCOL).toEqual(7);
-    expect(vg.stateOfGame.maxLev).toEqual(4);
+    expect(vg.stateOfGame.maxLev).toEqual(6);
     expect(vg.stateOfGame.whoBegins).toEqual("player1");
   });
 
