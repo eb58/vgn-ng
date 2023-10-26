@@ -1,12 +1,20 @@
 import { Injectable } from '@angular/core';
 import { range, FieldOccupiedType, GR, VgModelStaticService, DIM } from './vg-model-static.service';
 
+const id = (x: any) => x
+const max = (xs: any[], proj: (a: any) => number) => xs.reduce((a, x) => ((proj || id)(x) > (proj || id)(a) ? x : a), xs[0])
+
 const clone = (a: {}) => JSON.parse(JSON.stringify(a));
 const cloneState = (state: STATE) => clone(state);
 
 export interface STATEOFGAME {
   whoBegins: string,  // Wer fängt an 'player1' oder 'player2'
   maxLev: number,     // Spielstärke
+}
+
+export interface MoveType {
+  move: number;
+  val: number;
 }
 
 export interface STATE {
@@ -16,8 +24,6 @@ export interface STATE {
   grstate: GR[];               // Zusatnd der Gewinnreihen
   whosTurn: string,            // wer ist dran
   isMill: boolean,             // haben wir 4 in einer Reihe
-  bestMove: number,            // bester Zug aus minmax
-  cntMoves: number,
 }
 
 @Injectable({
@@ -43,8 +49,6 @@ export class VgModelService {
     grstate: this.vgmodelstatic.gr.map((g) => ({ ...g, occupiedBy: FieldOccupiedType.empty, cnt: 0 })),
     whosTurn: this.origStateOfGame.whoBegins,
     isMill: false,
-    bestMove: -1,
-    cntMoves: 0,
   };
 
   constructor(private vgmodelstatic: VgModelStaticService) {
@@ -70,16 +74,9 @@ export class VgModelService {
     return FieldOccupiedType.neutral;
   }
 
-  move = (c: number, mstate: STATE = this.state):string => {
-
-    if ( mstate.hcol[c] === DIM.NROW) {
-      throw Error(`Die Spalte ${c} ist voll`);
-    }
-    
-    if ( mstate.isMill ){
-      console.log( "ISMILL")
-      return 'isMill';
-    } 
+  move = (c: number, mstate: STATE = this.state): string => {
+    if (mstate.isMill ) return 'finished'
+    if (mstate.hcol[c] === DIM.NROW) return 'notallowed'
 
     const idxBoard = c + DIM.NCOL * mstate.hcol[c]
 
@@ -90,16 +87,15 @@ export class VgModelService {
       gr.occupiedBy = this.transitionGR(occupy, gr.occupiedBy);
       gr.cnt += (gr.occupiedBy !== FieldOccupiedType.neutral) ? 1 : 0;
       if (gr.cnt >= 4) {
-        mstate.isMill = true; 
+        mstate.isMill = true;
       }
     });
     mstate.moves.push(c);
     mstate.board[idxBoard] = mstate.whosTurn === 'player1' ? FieldOccupiedType.player1 : FieldOccupiedType.player2;
-    mstate.cntMoves++;
     mstate.hcol[c]++;
     mstate.whosTurn = mstate.whosTurn === "player1" ? "player2" : "player1";
 
-    return mstate.isMill ? 'isMill' : (mstate.cntMoves === DIM.NROW * DIM.NCOL ? 'isDraw' : 'notallowed');
+    return mstate.isMill ? 'isMill' : (mstate.moves.length === DIM.NROW * DIM.NCOL ? 'isDraw' : '');
   }
 
   computeValOfNode = (state: any) => {
@@ -113,8 +109,7 @@ export class VgModelService {
     return state.whosTurn === FieldOccupiedType.player1 ? v : -v;
   }
 
-  miniMax = (state: any, lev: number, alpha: number, beta: number) => { // evaluate state recursively, negamax algorithm!
-    state.bestMove = -1;
+  miniMax = (state: STATE, lev: number, alpha: number, beta: number) => { // evaluate state recursively, negamax algorithm!
     if (state.isMill) {
       return -(this.MAXVAL + lev);
     }
@@ -125,36 +120,38 @@ export class VgModelService {
 
     const moves = this.possibleMoves(state);
     if (moves.length === 0) {
-      return this.computeValOfNode(state);
+      return 0;
     }
 
     let maxVal = alpha;
-    const valuesOfMoves = this.rangeNCOL.map(() => alpha);
-
     for (const m of moves) {
       const clonedState = cloneState(state);
       this.move(m, clonedState);
       const val = -this.miniMax(clonedState, lev - 1, -beta, -maxVal);
-      valuesOfMoves[m] = val;
       if (val > maxVal) {
         maxVal = val;
-        state.bestMove = m;
         if (maxVal >= beta) {
           break;
         }
       }
     }
-    if (lev === this.stateOfGame.maxLev) console.log( 'BESTMOVE', state.bestMove, 'MAXVAL:', maxVal, 'VALS:', valuesOfMoves, state.moves)
     return maxVal;
   }
 
-  bestMove = () => {
-    const lstate = cloneState(this.state);
-    this.miniMax(lstate, this.stateOfGame.maxLev, -this.MAXVAL, +this.MAXVAL);
-    if (lstate.bestMove !== -1)
-      return lstate.bestMove;
-    // there is no best move, just take first possible,
-    return this.possibleMoves(this.state)[0]
+  calcBestMove = (): MoveType => {
+    const moves = this.possibleMoves(this.state);
+    const valuesOfMoves = moves.map(move => {
+      const clonedState = cloneState(this.state);
+      this.move(move, clonedState);
+      return { move, val: -this.miniMax(clonedState, this.stateOfGame.maxLev - 1, -this.MAXVAL, +this.MAXVAL) };
+    })
+    const bestMove = max(valuesOfMoves, (v) => v.val)
+    console.log(
+      'BESTMOVE', bestMove?.move,
+      'MAXVAL:', bestMove?.val,
+      'VALS:', valuesOfMoves.reduce((acc: any[], v) => { acc[v.move] = v.val; return acc }, []), this.state.moves
+    )
+    return bestMove;
   }
 
   undo() {
@@ -171,12 +168,12 @@ export class VgModelService {
     const s = range(DIM.NROW).reduce((acc1, r) => {
       return acc1 + range(DIM.NCOL).reduce((acc2, c) => {
         const x = c + DIM.NCOL * (DIM.NROW - r - 1);
-        if (this.state.board[x] === 1) return  acc2 + " X ";
-        if (this.state.board[x] === 2) return  acc2 + " O "
+        if (this.state.board[x] === 1) return acc2 + " X ";
+        if (this.state.board[x] === 2) return acc2 + " O "
         return acc2 + " _ ";
       }, "") + "\n"
     }, "")
-    console.log( "\n"+ s)
+    console.log("\n" + s)
   }
 
 }

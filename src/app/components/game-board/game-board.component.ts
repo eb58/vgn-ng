@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { STATE, STATEOFGAME, VgModelService } from '../../services/vg-model.service';
+import { MoveType, STATE, STATEOFGAME, VgModelService } from '../../services/vg-model.service';
 import { DIM, FieldOccupiedType, range } from '../../services/vg-model-static.service';
 import { InfoDialog } from '../info-dialog/info-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -48,6 +48,14 @@ export class GameBoardComponent {
     this.info = ""
     if (this.state.whosTurn === "player1") {
       const res1 = this.vg.move(c)
+      if( res1 === 'notallowed'){
+        this.info = "Zug nicht erlaubt"
+        return
+      } 
+      if( res1 === 'finished'){
+        this.info = "Das Spiel ist zuende."
+        return
+      } 
       if (res1 === 'isMill') {
         this.openDialog("Gratuliere, du hast gewonnen!")
         return;
@@ -58,9 +66,9 @@ export class GameBoardComponent {
       }
 
       // Führe Zug für Computer aus:
-      const bestMove = this.vg.bestMove()
-      const res2 = this.vg.move(bestMove)
-      this.info = `Mein letzter Zug: Spalte ${bestMove+1}`
+      const bestMove:MoveType = this.vg.calcBestMove()
+      const res2 = this.vg.move(bestMove.move)
+      this.info = `Mein letzter Zug: Spalte ${bestMove.move+1}`
       if (res2 === 'isMill') {
         this.openDialog("Bedaure, du hast verloren!")
         return;
@@ -72,15 +80,20 @@ export class GameBoardComponent {
     }
   }
 
-  undoMove = () => this.vg.undo()
+  undoMove = () => {
+    this.info = ""
+    this.vg.undo()
+  }
 
   restartGame = () => {
+    this.info = ""
     this.openQuestionDialog("Wirklich neu starten?")
       .pipe(filter(res => res === "ja"))
       .subscribe(() => {
         this.vg.restart()
         // just for test 
         // doMoves(this.vg, [3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 6, 5, 1])
+        // doMoves(this.vg,[3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4])
       })
   }
 

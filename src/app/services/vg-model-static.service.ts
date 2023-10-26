@@ -50,6 +50,7 @@ export class VgModelStaticService {
   }
 
   initGRs = () => {
+    this.gr = [];
     range(DIM.NROW).forEach(r =>
       range(DIM.NCOL).forEach(c => {
         this.berechneGRs(r, c, 0, 1);

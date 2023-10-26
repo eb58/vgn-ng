@@ -14,7 +14,7 @@ describe('VgModelStaticService', () => {
   it('should be created', () => expect(service).toBeTruthy());
   it('should be initialized correctly', () => {
     service.initGRs()
-    expect(service.gr.length).toEqual(138)
+    expect(service.gr.length).toEqual(69)
     expect(service.grs.length).toEqual(42)
   })
 });
