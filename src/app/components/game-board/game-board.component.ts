@@ -58,7 +58,9 @@ export class GameBoardComponent {
       }
 
       // Führe Zug für Computer aus:
-      const res2 = this.vg.move(this.vg.bestMove())
+      const bestMove = this.vg.bestMove()
+      const res2 = this.vg.move(bestMove)
+      this.info = `Mein letzter Zug: Spalte ${bestMove+1}`
       if (res2 === 'isMill') {
         this.openDialog("Bedaure, du hast verloren!")
         return;
@@ -90,7 +92,6 @@ export class GameBoardComponent {
 
   getClass = (row: number, col: number): string => {
     const x = col + DIM.NCOL * (DIM.NROW - row - 1);
-    // console.log( row, col, x, this.vg.state.grstate[x].occupiedBy)
     if (this.vg.state.board[x] === FieldOccupiedType.player1) return "player1"
     if (this.vg.state.board[x] === FieldOccupiedType.player2) return "player2"
     return ""

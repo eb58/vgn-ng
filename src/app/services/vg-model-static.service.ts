@@ -19,7 +19,7 @@ export const DIM = { NCOL: 7, NROW: 6 };
 export class VgModelStaticService {
 
   gr: GR[] = []; // Gewinnreihen
-  grs: number[][] = []; // Gewinnreihen pro Feld  
+  grs: number[][] = []; // pro Feld eine Liste mit den Indizes auf die Gewinnreihen, die dieses Feld enthalten
 
   constructor() {
     this.initGRs();
@@ -41,7 +41,7 @@ export class VgModelStaticService {
     while (r >= 0 && r < DIM.NROW && c >= 0 && c < DIM.NCOL) {
       arr.push(c + DIM.NCOL * r);
       if (arr.length === 4) {
-        this.gr.push({ arr: arr, val: valOfGR(dr, dc), cnt: 0, occupiedBy: 0 });
+        this.gr.push({ arr: arr, val: valOfGR(dr, dc), cnt: 0, occupiedBy: FieldOccupiedType.empty });
         return;
       }
       c += dc;
@@ -50,18 +50,17 @@ export class VgModelStaticService {
   }
 
   initGRs = () => {
-    range(DIM.NROW).forEach(r => {
+    range(DIM.NROW).forEach(r =>
       range(DIM.NCOL).forEach(c => {
         this.berechneGRs(r, c, 0, 1);
         this.berechneGRs(r, c, 1, 1);
         this.berechneGRs(r, c, 1, 0);
         this.berechneGRs(r, c, -1, 1);
       })
-    })
+    )
 
     range(DIM.NCOL * DIM.NROW).forEach(i => {
       this.grs[i] = this.gr.reduce((acc: number[], g: GR, j: number) => g.arr.includes(i) ? [...acc, j] : acc, []);
     })
-    // this.dump();
   }
 }

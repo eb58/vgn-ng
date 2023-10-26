@@ -79,11 +79,12 @@ export class VgModelService {
     if ( mstate.isMill ){
       console.log( "ISMILL")
       return 'isMill';
-
     } 
 
-    // update state of gewinnreihen attached in move c
-    this.vgmodelstatic.grs[c + DIM.NCOL * mstate.hcol[c]] .forEach(i => {
+    const idxBoard = c + DIM.NCOL * mstate.hcol[c]
+
+    // update state of gewinnreihen attached to idxBoard
+    this.vgmodelstatic.grs[idxBoard].forEach(i => {
       const gr = mstate.grstate[i];
       const occupy = mstate.whosTurn === 'player1' ? FieldOccupiedType.player1 : FieldOccupiedType.player2;
       gr.occupiedBy = this.transitionGR(occupy, gr.occupiedBy);
@@ -93,9 +94,9 @@ export class VgModelService {
       }
     });
     mstate.moves.push(c);
-    mstate.board[c + DIM.NCOL * mstate.hcol[c]] = mstate.whosTurn === 'player1' ? FieldOccupiedType.player1 : FieldOccupiedType.player2;
-    mstate.cntMoves += 1;
-    mstate.hcol[c] += 1;
+    mstate.board[idxBoard] = mstate.whosTurn === 'player1' ? FieldOccupiedType.player1 : FieldOccupiedType.player2;
+    mstate.cntMoves++;
+    mstate.hcol[c]++;
     mstate.whosTurn = mstate.whosTurn === "player1" ? "player2" : "player1";
 
     return mstate.isMill ? 'isMill' : (mstate.cntMoves === DIM.NROW * DIM.NCOL ? 'isDraw' : 'notallowed');
