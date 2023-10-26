@@ -60,7 +60,7 @@ export class VgModelService {
     this.stateOfGame = clone(this.origStateOfGame);
   }
 
-  possibleMoves = (state: STATE) => this.rangeNCOL.filter(c => state.heightCol[c] < DIM.NROW);
+  generateMoves = (state: STATE) => this.rangeNCOL.filter(c => state.heightCol[c] < DIM.NROW);
 
   transitionGR = (e: FieldOccupiedType, a: FieldOccupiedType): FieldOccupiedType => { // e eingang   a ausgang
     if (a === FieldOccupiedType.empty)
@@ -117,13 +117,13 @@ export class VgModelService {
       return this.computeValOfNode(state);
     }
 
-    const moves = this.possibleMoves(state);
-    if (moves.length === 0) {
+    const possibleMoves = this.generateMoves(state);
+    if (possibleMoves.length === 0) {
       return 0;
     }
 
     let value = -MAXVAL;
-    for (const m of moves) {
+    for (const m of possibleMoves) {
       const clonedState = clone(state);
       this.move(m, clonedState);
       value = max([value, -this.miniMax(clonedState, lev - 1, -beta, -alpha)]);
@@ -135,7 +135,7 @@ export class VgModelService {
   }
 
   calcBestMove = (): MoveType => {
-    const moves = this.possibleMoves(this.state);
+    const moves = this.generateMoves(this.state);
     const valuesOfMoves = moves.map(move => {
       const clonedState = clone(this.state);
       this.move(move, clonedState);
