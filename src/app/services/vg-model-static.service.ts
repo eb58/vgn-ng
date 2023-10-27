@@ -9,7 +9,7 @@ export interface GR {
   occupiedBy: FieldOccupiedType // Von wem ist die Gewinnreihe belegt? 
 }
 
-export enum FieldOccupiedType { empty, player1, player2, neutral };
+export enum FieldOccupiedType { empty, human, computer, neutral };
 
 export const DIM = { NCOL: 7, NROW: 6 };
 

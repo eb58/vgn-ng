@@ -17,14 +17,14 @@ describe('VgModelService', () => {
   });
 
   it('should be initialized correctly', () => {
-    expect(vg.stateOfGame.whoBegins).toEqual("player1");
+    expect(vg.stateOfGame.whoBegins).toEqual("human");
   });
 
   it('should work correctly', () => {
     expect(vg.move(0))
-    expect(vg.state.whosTurn).toEqual("player2");
+    expect(vg.state.whoseTurn).toEqual("computer");
     expect(vg.move(3))
-    expect(vg.state.whosTurn).toEqual("player1");
+    expect(vg.state.whoseTurn).toEqual("human");
   });
 
   it('should work for scenario 1', () => {

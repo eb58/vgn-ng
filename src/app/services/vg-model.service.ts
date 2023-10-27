@@ -5,7 +5,7 @@ const max = (xs: any[], proj: (a: any) => number = x => x) => xs.reduce((a, x) =
 const clone = (a: {}) => JSON.parse(JSON.stringify(a));
 
 export interface STATEOFGAME {
-  whoBegins: string,  // Wer fängt an 'player1' oder 'player2'
+  whoBegins: string,  // Wer fängt an 'human' oder 'computer'
   maxLev: number,     // Spielstärke
 }
 export interface STATE {
@@ -13,7 +13,7 @@ export interface STATE {
   board: FieldOccupiedType[];  // Spielfeldbelegung
   heightCol: number[];         // Höhe der Spalten
   grState: GR[];               // Zustand der Gewinnreihen
-  whosTurn: string,            // wer ist dran
+  whoseTurn: string,           // wer ist dran: human or computer
   isMill: boolean,             // haben wir 4 in einer Reihe
 }
 
@@ -35,7 +35,7 @@ export class VgModelService {
   ORDER = [3, 4, 2, 5, 1, 6, 0];
 
   origStateOfGame: STATEOFGAME = {
-    whoBegins: 'player1',
+    whoBegins: 'human',
     maxLev: 4,
   };
 
@@ -44,7 +44,7 @@ export class VgModelService {
     board: range(DIM.NCOL * DIM.NROW).map(() => 0),
     heightCol: this.rangeNCOL.map(() => 0), // height of cols = [0,0,0,...,0];
     grState: this.vgmodelstatic.gr.map((g) => ({ ...g, occupiedBy: FieldOccupiedType.empty, cnt: 0 })),
-    whosTurn: this.origStateOfGame.whoBegins,
+    whoseTurn: this.origStateOfGame.whoBegins,
     isMill: false,
   };
 
@@ -74,7 +74,7 @@ export class VgModelService {
     // update state of gewinnreihen attached to idxBoard
     this.vgmodelstatic.grs[idxBoard].forEach(i => {
       const gr = mstate.grState[i];
-      const occupy = mstate.whosTurn === 'player1' ? FieldOccupiedType.player1 : FieldOccupiedType.player2;
+      const occupy = mstate.whoseTurn === 'human' ? FieldOccupiedType.human : FieldOccupiedType.computer;
       gr.occupiedBy = this.transitionGR(occupy, gr.occupiedBy);
       gr.cnt += (gr.occupiedBy !== FieldOccupiedType.neutral) ? 1 : 0;
       if (gr.cnt >= 4) {
@@ -82,22 +82,22 @@ export class VgModelService {
       }
     });
     mstate.moves.push(c);
-    mstate.board[idxBoard] = mstate.whosTurn === 'player1' ? FieldOccupiedType.player1 : FieldOccupiedType.player2;
+    mstate.board[idxBoard] = mstate.whoseTurn === 'human' ? FieldOccupiedType.human : FieldOccupiedType.computer;
     mstate.heightCol[c]++;
-    mstate.whosTurn = mstate.whosTurn === "player1" ? "player2" : "player1";
+    mstate.whoseTurn = mstate.whoseTurn === "human" ? "computer" : "human";
   }
 
   computeValOfNode = (state: STATE) => {
     const v = state.grState
-      .filter(gr => gr.occupiedBy === FieldOccupiedType.player1 || gr.occupiedBy === FieldOccupiedType.player2)
+      .filter(gr => gr.occupiedBy === FieldOccupiedType.human || gr.occupiedBy === FieldOccupiedType.computer)
       .reduce((acc: number, gr: GR) => {
         const n = gr.cnt || 1;
         const factor = n === 3 ? gr.val : 1;
         return acc
-          + (gr.occupiedBy === FieldOccupiedType.player1 ? n * n * factor : 0)
-          - (gr.occupiedBy === FieldOccupiedType.player2 ? n * n * factor : 0);
+          + (gr.occupiedBy === FieldOccupiedType.human ? n * n * factor : 0)
+          - (gr.occupiedBy === FieldOccupiedType.computer ? n * n * factor : 0);
       }, 0);
-    return state.whosTurn === 'player1' ? v : -v;
+    return state.whoseTurn === 'human' ? v : -v;
   }
 
 
@@ -157,8 +157,8 @@ export class VgModelService {
     const s = range(DIM.NROW).reduce((acc1, r) => {
       return acc1 + range(DIM.NCOL).reduce((acc2, c) => {
         const x = c + DIM.NCOL * (DIM.NROW - r - 1);
-        if (this.state.board[x] === 1) return acc2 + " X ";
-        if (this.state.board[x] === 2) return acc2 + " O "
+        if (this.state.board[x] === FieldOccupiedType.computer) return acc2 + " X ";
+        if (this.state.board[x] === FieldOccupiedType.human) return acc2 + " O "
         return acc2 + " _ ";
       }, "") + "\n"
     }, "")

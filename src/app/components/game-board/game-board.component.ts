@@ -42,22 +42,25 @@ export class GameBoardComponent {
 
   onClick = (c: number) => {
     this.info = ""
-    if (this.vg.state.isMill || this.vg.state.moves.length === DIM.NCOL * DIM.NROW) {
+    const isMill = this.vg.state.isMill;
+    const isRemis = this.vg.state.moves.length === DIM.NCOL * DIM.NROW
+
+    if (isMill || isRemis) {
       this.info = "Das Spiel ist zuende."
       return 
     }
-    if (this.vg.state.whosTurn === "player1") {
+    if (this.vg.state.whoseTurn === "human") {
       this.vg.move(c)
-      if (this.vg.state.isMill)  this.openDialog("Gratuliere, du hast gewonnen!")
-      if (this.vg.state.moves.length === DIM.NCOL * DIM.NROW) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
-      if (this.vg.state.isMill || this.vg.state.moves.length === DIM.NCOL * DIM.NROW) return 
+      if (isMill)  this.openDialog("Gratuliere, du hast gewonnen!")
+      if (isRemis) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
+      if (isMill || isRemis ) return 
 
       // Führe Zug für Computer aus:
       const bestMove = this.vg.calcBestMove().move
       this.vg.move(bestMove)
       this.info = `Mein letzter Zug: Spalte ${bestMove + 1}`
-      if (this.vg.state.isMill) this.openDialog("Bedaure, du hast verloren!")
-      if (this.vg.state.moves.length === DIM.NCOL * DIM.NROW) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
+      if (isMill) this.openDialog("Bedaure, du hast verloren!")
+      if (isRemis) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
     }
   }
 
@@ -86,8 +89,8 @@ export class GameBoardComponent {
 
   getClass = (row: number, col: number): string => {
     const x = col + DIM.NCOL * (DIM.NROW - row - 1);
-    if (this.vg.state.board[x] === FieldOccupiedType.player1) return "player1"
-    if (this.vg.state.board[x] === FieldOccupiedType.player2) return "player2"
+    if (this.vg.state.board[x] === FieldOccupiedType.human) return "human"
+    if (this.vg.state.board[x] === FieldOccupiedType.computer) return "computer"
     return ""
   }
 }
