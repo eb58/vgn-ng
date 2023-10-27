@@ -35,7 +35,7 @@ export class VgModelStaticService {
     // horizontal gr is the best (8)
     // skew gr is quit good (4)
     // vertical gr is not so strong as horizontal or skew ones (1)
-    const valOfGR = (dr: number, dc: number) => dr === 0 ? 8 : (dc !== 0 ? 4 : 1);
+    const valOfGR = (dr: number, dc: number) => dr === 0 ? 8 : (dc !== 0 ? 4 : 0);
 
     const arr = [];
     while (r >= 0 && r < DIM.NROW && c >= 0 && c < DIM.NCOL) {
