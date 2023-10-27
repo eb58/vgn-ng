@@ -42,6 +42,7 @@ export class GameBoardComponent {
 
   onClick = (c: number) => {
     this.info = ""
+
     const isMill = this.vg.state.isMill;
     const isRemis = this.vg.state.moves.length === DIM.NCOL * DIM.NROW
 
@@ -49,11 +50,18 @@ export class GameBoardComponent {
       this.info = "Das Spiel ist zuende."
       return 
     }
+
+    const idxBoard = c + DIM.NCOL * this.vg.state.heightCol[c]
+    if( 0 > idxBoard || idxBoard > DIM.NCOL*DIM.NROW ){
+      this.info = "Kein erlaubter Zug";
+      return 
+    }
+  
     if (this.vg.state.whoseTurn === "human") {
       this.vg.move(c)
-      if (isMill)  this.openDialog("Gratuliere, du hast gewonnen!")
+      if (isMill) this.openDialog("Gratuliere, du hast gewonnen!")
       if (isRemis) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
-      if (isMill || isRemis ) return 
+      if (isMill || isRemis) return
 
       // Führe Zug für Computer aus:
       const bestMove = this.vg.calcBestMove().move
@@ -76,6 +84,7 @@ export class GameBoardComponent {
       .subscribe(() => {
         this.vg.restart()
         // just for test 
+        // doMoves(this.vg, [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4])
         // doMoves(this.vg, [3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 6, 5, 1])
         // doMoves(this.vg,[3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4])
       })
