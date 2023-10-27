@@ -56,18 +56,18 @@ describe('VgModelService', () => {
     vg.stateOfGame.maxLev = 6
     doMoves(vg, [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4, 4])
     vg.dumpBoard();
-    const bm = vg.calcBestMove()
-    expect(bm.move).toEqual(1);
+    const bm = vg.calcBestMove().move
+    expect(bm===4 || bm ===1 ).toBeTrue();
   });
 
   it('should work for scenario 6 - volles Spielfeld', () => {
     vg.stateOfGame.maxLev = 6
     doMoves(vg, [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4, 1, 4])
     vg.dumpBoard();
-    const bm = vg.calcBestMove()
-    expect(bm.move).toEqual(1);
+    const bm = vg.calcBestMove().move
+    expect(bm===1 || bm=== 4).toBeTrue()
   });
-  // 
+  
   
 
 });

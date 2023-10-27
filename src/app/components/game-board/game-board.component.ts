@@ -43,10 +43,8 @@ export class GameBoardComponent {
   onClick = (c: number) => {
     this.info = ""
 
-    const isMill = this.vg.state.isMill;
-    const isRemis = this.vg.state.moves.length === DIM.NCOL * DIM.NROW
 
-    if (isMill || isRemis) {
+    if (this.vg.isMill() || this.vg.isRemis()) {
       this.info = "Das Spiel ist zuende."
       return 
     }
@@ -59,16 +57,16 @@ export class GameBoardComponent {
   
     if (this.vg.state.whoseTurn === "human") {
       this.vg.move(c)
-      if (isMill) this.openDialog("Gratuliere, du hast gewonnen!")
-      if (isRemis) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
-      if (isMill || isRemis) return
+      if (this.vg.isMill()) this.openDialog("Gratuliere, du hast gewonnen!")
+      if (this.vg.isRemis()) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
+      if (this.vg.isMill() || this.vg.isRemis()) return
 
       // Führe Zug für Computer aus:
       const bestMove = this.vg.calcBestMove().move
       this.vg.move(bestMove)
       this.info = `Mein letzter Zug: Spalte ${bestMove + 1}`
-      if (isMill) this.openDialog("Bedaure, du hast verloren!")
-      if (isRemis) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
+      if (this.vg.isMill()) this.openDialog("Bedaure, du hast verloren!")
+      if (this.vg.isRemis()) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
     }
   }
 
@@ -83,7 +81,10 @@ export class GameBoardComponent {
       .pipe(filter(res => res === "ja"))
       .subscribe(() => {
         this.vg.restart()
-        // just for test 
+        // just for test
+        const moves = [3, 3, 0, 3, 0, 3, 3, 0] 
+        doMoves(this.vg, moves)
+        // doMoves(this.vg, [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4, 1, 4])
         // doMoves(this.vg, [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4])
         // doMoves(this.vg, [3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 6, 5, 1])
         // doMoves(this.vg,[3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4])

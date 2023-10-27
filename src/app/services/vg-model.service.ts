@@ -23,30 +23,28 @@ export interface MoveType {
 }
 
 const MAXVAL = 100000;
+const ORDER = [3, 4, 2, 5, 1, 6, 0]
 
 @Injectable({
   providedIn: 'root'
 })
 export class VgModelService {
-  state!: STATE;
-  stateOfGame!: STATEOFGAME;
-
-  rangeNCOL = range(DIM.NCOL);
-  ORDER = [3, 4, 2, 5, 1, 6, 0];
-
   origStateOfGame: STATEOFGAME = {
     whoBegins: 'human',
-    maxLev: 4,
+    maxLev: 6,
   };
 
   origState: STATE = { // state that is used for evaluating 
     moves: [],
     board: range(DIM.NCOL * DIM.NROW).map(() => 0),
-    heightCol: this.rangeNCOL.map(() => 0), // height of cols = [0,0,0,...,0];
+    heightCol: range(DIM.NCOL).map(() => 0), // height of cols = [0,0,0,...,0];
     grState: this.vgmodelstatic.gr.map((g) => ({ ...g, occupiedBy: FieldOccupiedType.empty, cnt: 0 })),
     whoseTurn: this.origStateOfGame.whoBegins,
     isMill: false,
   };
+
+  state: STATE = clone(this.origState);
+  stateOfGame: STATEOFGAME = clone(this.origStateOfGame);
 
   constructor(private vgmodelstatic: VgModelStaticService) {
     this.init()
@@ -57,7 +55,7 @@ export class VgModelService {
     this.stateOfGame = clone(this.origStateOfGame);
   }
 
-  generateAllowedMoves = (state: STATE) => this.rangeNCOL.filter(c => state.heightCol[c] < DIM.NROW);
+  generateAllowedMoves = (state: STATE) => ORDER.filter(c => state.heightCol[c] < DIM.NROW);
 
   transitionGR = (e: FieldOccupiedType, a: FieldOccupiedType): FieldOccupiedType => { // e eingang   a ausgang
     if (a === FieldOccupiedType.empty)
@@ -129,16 +127,34 @@ export class VgModelService {
 
   calcBestMove = (): MoveType => {
     const moves = this.generateAllowedMoves(this.state);
-    const valuesOfMoves = moves.map(move => {
+
+    // 1. Prüfe ob es eine einfache Lösung gibt...
+    const valuesOfMoves1 = moves.map(move => {
+      const clonedState = clone(this.state);
+      this.move(move, clonedState);
+      return { move, val: -this.miniMax(clonedState, 2, -MAXVAL, +MAXVAL) };
+    })
+
+    if (max(valuesOfMoves1, (v) => v.val).val >= MAXVAL )
+      return max(valuesOfMoves1, (v) => v.val)
+
+    if( valuesOfMoves1.filter( m => m.val > -10000 ).length === 1 ){
+      // nur ein Zug ist kein Verlustzug!
+      return max(valuesOfMoves1, (v) => v.val)
+    }
+
+    // 2. Jetzt mit voller Suchtiefe
+    const valuesOfMoves2 = moves.map(move => {
       const clonedState = clone(this.state);
       this.move(move, clonedState);
       return { move, val: -this.miniMax(clonedState, this.stateOfGame.maxLev, -MAXVAL, +MAXVAL) };
     })
-    const bestMove = max(valuesOfMoves, (v) => v.val)
+
+    const bestMove = max(valuesOfMoves2, (v) => v.val)
     console.log(
       'BESTMOVE', bestMove?.move,
       'MAXVAL:', bestMove?.val,
-      'VALS:', valuesOfMoves.reduce((acc: any[], v) => { acc[v.move] = v.val; return acc }, []), this.state.moves
+      'VALS:', valuesOfMoves2.reduce((acc: any[], v) => { acc[v.move] = v.val; return acc }, []), this.state.moves
     )
     return bestMove;
   }
@@ -164,5 +180,8 @@ export class VgModelService {
     }, "")
     console.log("\n" + s)
   }
+
+  isMill = () => this.state.isMill
+  isRemis = () => this.state.moves.length === DIM.NCOL * DIM.NROW
 
 }
