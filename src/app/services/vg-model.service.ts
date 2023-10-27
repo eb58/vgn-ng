@@ -6,7 +6,7 @@ const clone = (a: {}) => JSON.parse(JSON.stringify(a));
 
 export interface STATEOFGAME {
   whoBegins: string,  // Wer fängt an 'human' oder 'computer'
-  maxLev: number,     // Spielstärke
+  maxLev: string|number,     // Spielstärke
 }
 export interface STATE {
   moves: number[],             // Spielzüge - Liste der Spalten (0, 1, ... , 6) in die ein Stein geworfen wird.) 
@@ -31,7 +31,7 @@ const ORDER = [3, 4, 2, 5, 1, 6, 0]
 export class VgModelService {
   origStateOfGame: STATEOFGAME = {
     whoBegins: 'human',
-    maxLev: 6,
+    maxLev: '6',
   };
 
   origState: STATE = { // state that is used for evaluating 
@@ -147,7 +147,7 @@ export class VgModelService {
     const valuesOfMoves2 = moves.map(move => {
       const clonedState = clone(this.state);
       this.move(move, clonedState);
-      return { move, val: -this.miniMax(clonedState, this.stateOfGame.maxLev, -MAXVAL, +MAXVAL) };
+      return { move, val: -this.miniMax(clonedState, Number(this.stateOfGame.maxLev), -MAXVAL, +MAXVAL) };
     })
 
     const bestMove = max(valuesOfMoves2, (v) => v.val)
