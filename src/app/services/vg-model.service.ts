@@ -2,22 +2,12 @@ import { Injectable } from '@angular/core';
 import { range, FieldOccupiedType, GR, VgModelStaticService, DIM } from './vg-model-static.service';
 
 const max = (xs: any[], proj: (a: any) => number = x => x) => xs.reduce((a, x) => (proj(x) > (proj)(a) ? x : a), xs[0])
-
 const clone = (a: {}) => JSON.parse(JSON.stringify(a));
-const cloneState = (state: STATE) => clone(state);
 
 export interface STATEOFGAME {
   whoBegins: string,  // Wer fängt an 'player1' oder 'player2'
   maxLev: number,     // Spielstärke
 }
-
-export interface MoveType {
-  move: number;
-  val: number;
-}
-
-const MAXVAL = 100000;
-
 export interface STATE {
   moves: number[],             // Spielzüge - Liste der Spalten (0, 1, ... , 6) in die ein Stein geworfen wird.) 
   board: FieldOccupiedType[];  // Spielfeldbelegung
@@ -26,6 +16,13 @@ export interface STATE {
   whosTurn: string,            // wer ist dran
   isMill: boolean,             // haben wir 4 in einer Reihe
 }
+
+export interface MoveType {
+  move: number;
+  val: number;
+}
+
+const MAXVAL = 100000;
 
 @Injectable({
   providedIn: 'root'
@@ -60,7 +57,7 @@ export class VgModelService {
     this.stateOfGame = clone(this.origStateOfGame);
   }
 
-  generateMoves = (state: STATE) => this.rangeNCOL.filter(c => state.heightCol[c] < DIM.NROW);
+  generateAllowedMoves = (state: STATE) => this.rangeNCOL.filter(c => state.heightCol[c] < DIM.NROW);
 
   transitionGR = (e: FieldOccupiedType, a: FieldOccupiedType): FieldOccupiedType => { // e eingang   a ausgang
     if (a === FieldOccupiedType.empty)
@@ -70,9 +67,7 @@ export class VgModelService {
     return FieldOccupiedType.neutral;
   }
 
-  move = (c: number, mstate: STATE = this.state): string => {
-    if (mstate.isMill) return 'finished'
-    if (mstate.heightCol[c] === DIM.NROW) return 'notallowed'
+  move = (c: number, mstate: STATE = this.state) => {
 
     const idxBoard = c + DIM.NCOL * mstate.heightCol[c]
 
@@ -90,8 +85,6 @@ export class VgModelService {
     mstate.board[idxBoard] = mstate.whosTurn === 'player1' ? FieldOccupiedType.player1 : FieldOccupiedType.player2;
     mstate.heightCol[c]++;
     mstate.whosTurn = mstate.whosTurn === "player1" ? "player2" : "player1";
-
-    return mstate.isMill ? 'isMill' : (mstate.moves.length === DIM.NROW * DIM.NCOL ? 'isDraw' : '');
   }
 
   computeValOfNode = (state: STATE) => {
@@ -117,13 +110,13 @@ export class VgModelService {
       return this.computeValOfNode(state);
     }
 
-    const possibleMoves = this.generateMoves(state);
-    if (possibleMoves.length === 0) {
-      return 0;
+    const allowdMoves = this.generateAllowedMoves(state);
+    if (allowdMoves.length === 0) {
+      return this.computeValOfNode(state);
     }
 
-    let value = -MAXVAL;
-    for (const m of possibleMoves) {
+    let value = alpha;
+    for (const m of allowdMoves) {
       const clonedState = clone(state);
       this.move(m, clonedState);
       value = max([value, -this.miniMax(clonedState, lev - 1, -beta, -alpha)]);
@@ -135,7 +128,7 @@ export class VgModelService {
   }
 
   calcBestMove = (): MoveType => {
-    const moves = this.generateMoves(this.state);
+    const moves = this.generateAllowedMoves(this.state);
     const valuesOfMoves = moves.map(move => {
       const clonedState = clone(this.state);
       this.move(move, clonedState);

@@ -17,14 +17,10 @@ export const doMoves = (vg: VgModelService, moves: number[]) => moves.forEach(v 
 export class GameBoardComponent {
   info = 'Bitte klicke in die Spalte, in die du einen Stein einwerfen möchtest.'
 
-  state: STATE;
-  stateOfGame: STATEOFGAME;
   NROW = range(DIM.NROW);
   NCOL = range(DIM.NCOL);
 
   constructor(private vg: VgModelService, public dialog: MatDialog) {
-    this.state = vg.state
-    this.stateOfGame = vg.stateOfGame
   }
 
   openDialog(info: string): void {
@@ -46,37 +42,22 @@ export class GameBoardComponent {
 
   onClick = (c: number) => {
     this.info = ""
-    if (this.state.whosTurn === "player1") {
-      const res1 = this.vg.move(c)
-      if( res1 === 'notallowed'){
-        this.info = "Zug nicht erlaubt"
-        return
-      } 
-      if( res1 === 'finished'){
-        this.info = "Das Spiel ist zuende."
-        return
-      } 
-      if (res1 === 'isMill') {
-        this.openDialog("Gratuliere, du hast gewonnen!")
-        return;
-      }
-      if (res1 === 'isDraw') {
-        this.openDialog("Gratuliere, du hast ein Remis geschafft !");
-        return;
-      }
+    if (this.vg.state.isMill || this.vg.state.moves.length === DIM.NCOL * DIM.NROW) {
+      this.info = "Das Spiel ist zuende."
+      return 
+    }
+    if (this.vg.state.whosTurn === "player1") {
+      this.vg.move(c)
+      if (this.vg.state.isMill)  this.openDialog("Gratuliere, du hast gewonnen!")
+      if (this.vg.state.moves.length === DIM.NCOL * DIM.NROW) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
+      if (this.vg.state.isMill || this.vg.state.moves.length === DIM.NCOL * DIM.NROW) return 
 
       // Führe Zug für Computer aus:
-      const bestMove:MoveType = this.vg.calcBestMove()
-      const res2 = this.vg.move(bestMove.move)
-      this.info = `Mein letzter Zug: Spalte ${bestMove.move+1}`
-      if (res2 === 'isMill') {
-        this.openDialog("Bedaure, du hast verloren!")
-        return;
-      }
-      if (res2 === 'isDraw') {
-        this.openDialog("Gratuliere, du hast ein Remis geschafft !");
-        return;
-      }
+      const bestMove = this.vg.calcBestMove().move
+      this.vg.move(bestMove)
+      this.info = `Mein letzter Zug: Spalte ${bestMove + 1}`
+      if (this.vg.state.isMill) this.openDialog("Bedaure, du hast verloren!")
+      if (this.vg.state.moves.length === DIM.NCOL * DIM.NROW) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
     }
   }
 
@@ -100,7 +81,7 @@ export class GameBoardComponent {
   openSettings = () => {
     this.openSettingsDialog(this.vg.origStateOfGame)
       .pipe(filter(res => !!res))
-      .subscribe(res => this.stateOfGame = res)
+      .subscribe(res => this.vg.stateOfGame = res)
   }
 
   getClass = (row: number, col: number): string => {
