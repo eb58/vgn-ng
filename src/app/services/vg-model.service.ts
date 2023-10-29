@@ -6,7 +6,7 @@ const clone = (a: {}) => JSON.parse(JSON.stringify(a));
 
 export interface STATEOFGAME {
   whoBegins: string,  // Wer fängt an 'human' oder 'computer'
-  maxLev: string|number,     // Spielstärke
+  maxLev: string | number,     // Spielstärke
 }
 export interface STATE {
   moves: number[],             // Spielzüge - Liste der Spalten (0, 1, ... , 6) in die ein Stein geworfen wird.) 
@@ -45,6 +45,7 @@ export class VgModelService {
 
   state: STATE = clone(this.origState);
   stateOfGame: STATEOFGAME = clone(this.origStateOfGame);
+  cntNodesEvaluated = 0;
 
   constructor(private vgmodelstatic: VgModelStaticService) {
     this.init()
@@ -83,6 +84,7 @@ export class VgModelService {
     mstate.board[idxBoard] = mstate.whoseTurn === 'human' ? FieldOccupiedType.human : FieldOccupiedType.computer;
     mstate.heightCol[c]++;
     mstate.whoseTurn = mstate.whoseTurn === "human" ? "computer" : "human";
+    return mstate;
   }
 
   computeValOfNode = (state: STATE) => {
@@ -99,14 +101,12 @@ export class VgModelService {
   }
 
 
-  miniMax = (state: STATE, lev: number, alpha: number, beta: number) => { // evaluate state recursively, negamax algorithm!
-    if (state.isMill) {
-      return -(MAXVAL + lev);
-    }
+  // evaluate state recursively, negamax algorithm!
+  miniMax = (state: STATE, lev: number, alpha: number, beta: number) => {
+    this.cntNodesEvaluated++;
 
-    if (lev === 0) {
-      return this.computeValOfNode(state);
-    }
+    if (state.isMill) return -(MAXVAL + lev);
+    if (lev === 0) return this.computeValOfNode(state);
 
     const allowdMoves = this.generateAllowedMoves(state);
     if (allowdMoves.length === 0) {
@@ -115,8 +115,7 @@ export class VgModelService {
 
     let value = alpha;
     for (const m of allowdMoves) {
-      const clonedState = clone(state);
-      this.move(m, clonedState);
+      const clonedState = this.move(m, clone(state));
       value = max([value, -this.miniMax(clonedState, lev - 1, -beta, -alpha)]);
       alpha = max([alpha, value])
       if (alpha >= beta)
@@ -126,32 +125,32 @@ export class VgModelService {
   }
 
   calcBestMove = (): MoveType => {
+    this.cntNodesEvaluated = 0;
     const moves = this.generateAllowedMoves(this.state);
 
     // 1. Prüfe ob es eine einfache Lösung gibt...
     const valuesOfMoves1 = moves.map(move => {
-      const clonedState = clone(this.state);
-      this.move(move, clonedState);
+      const clonedState = this.move(move, clone(this.state));
       return { move, val: -this.miniMax(clonedState, 2, -MAXVAL, +MAXVAL) };
     })
 
-    if (max(valuesOfMoves1, (v) => v.val).val >= MAXVAL )
+    if (max(valuesOfMoves1, (v) => v.val).val >= MAXVAL)
       return max(valuesOfMoves1, (v) => v.val)
 
-    if( valuesOfMoves1.filter( m => m.val > -10000 ).length === 1 ){
+    if (valuesOfMoves1.filter(m => m.val > -MAXVAL).length === 1) {
       // nur ein Zug ist kein Verlustzug!
       return max(valuesOfMoves1, (v) => v.val)
     }
 
     // 2. Jetzt mit voller Suchtiefe
     const valuesOfMoves2 = moves.map(move => {
-      const clonedState = clone(this.state);
-      this.move(move, clonedState);
+      const clonedState = this.move(move, clone(this.state));
       return { move, val: -this.miniMax(clonedState, Number(this.stateOfGame.maxLev), -MAXVAL, +MAXVAL) };
     })
 
     const bestMove = max(valuesOfMoves2, (v) => v.val)
     console.log(
+      "COUNTNODES", this.cntNodesEvaluated,
       'BESTMOVE', bestMove?.move,
       'MAXVAL:', bestMove?.val,
       'VALS:', valuesOfMoves2.reduce((acc: any[], v) => { acc[v.move] = v.val; return acc }, []), this.state.moves
