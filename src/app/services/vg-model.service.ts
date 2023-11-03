@@ -1,8 +1,12 @@
 import { Injectable } from '@angular/core';
 import { range, FieldOccupiedType, GR, VgModelStaticService, DIM } from './vg-model-static.service';
 
+const cmp = (x:any, y:any) => (x === y ? 0 : x < y ? -1 : +1)
 const max = (xs: any[], proj: (a: any) => number = x => x) => xs.reduce((a, x) => (proj(x) > (proj)(a) ? x : a), xs[0])
 const clone = (a: {}) => JSON.parse(JSON.stringify(a));
+const comparer = (proj: any) => (x:any, y:any) => cmp(proj(x), proj(y))
+const comparerByKey = (key:any) => comparer((o:any):any => o[key])
+
 
 export interface STATEOFGAME {
   whoBegins: string,  // Wer fängt an 'human' oder 'computer'
@@ -15,6 +19,7 @@ export interface STATE {
   grState: GR[];               // Zustand der Gewinnreihen
   whoseTurn: string,           // wer ist dran: human or computer
   isMill: boolean,             // haben wir 4 in einer Reihe
+  value?: number,
 }
 
 export interface MoveType {
@@ -106,15 +111,15 @@ export class VgModelService {
     this.cntNodesEvaluated++;
 
     if (state.isMill) return -(MAXVAL + lev);
-    if (lev === 0) return this.computeValOfNode(state);
+    if (lev <= 0) return this.computeValOfNode(state);
 
-    const allowdMoves = this.generateAllowedMoves(state);
-    if (allowdMoves.length === 0) {
+    const allowedMoves = this.generateAllowedMoves(state);
+    if (allowedMoves.length === 0) {
       return this.computeValOfNode(state);
     }
 
     let value = alpha;
-    for (const m of allowdMoves) {
+    for (const m of allowedMoves) {
       const clonedState = this.move(m, clone(state));
       value = max([value, -this.miniMax(clonedState, lev - 1, -beta, -alpha)]);
       alpha = max([alpha, value])
