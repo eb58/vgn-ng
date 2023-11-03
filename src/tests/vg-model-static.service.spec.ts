@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { VgModelStaticService } from './vg-model-static.service';
+import { VgModelStaticService } from '../app/services/vg-model-static.service';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 describe('VgModelStaticService', () => {

@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
-import { VgModelService } from './vg-model.service';
+import { VgModelService } from '../app/services/vg-model.service';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { doMoves } from '../components/game-board/game-board.component';
+import { doMoves } from '../app/components/game-board/game-board.component';
 
 describe('VgModelService', () => {
   let vg: VgModelService;
