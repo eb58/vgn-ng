@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { MoveType, STATE, STATEOFGAME, VgModelService } from '../../services/vg-model.service';
+import { STATEOFGAME, VgModelService } from '../../services/vg-model.service';
 import { DIM, FieldOccupiedType, range } from '../../services/vg-model-static.service';
 import { InfoDialog } from '../info-dialog/info-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -7,7 +7,6 @@ import { QuestionDialogComponent } from '../question-dialog/question-dialog.comp
 import { Observable, filter } from 'rxjs';
 import { SettingsDialogComponent } from '../settings-dialog/settings-dialog.component';
 
-export const doMoves = (vg: VgModelService, moves: number[]) => moves.forEach(v => vg.move(v));
 
 @Component({
   selector: 'app-game-board',
@@ -20,8 +19,7 @@ export class GameBoardComponent {
   NROW = range(DIM.NROW);
   NCOL = range(DIM.NCOL);
 
-  constructor(private vg: VgModelService, public dialog: MatDialog) {
-  }
+  constructor(private readonly vg: VgModelService, public dialog: MatDialog) {}
 
   openDialog(info: string): void {
     const position = { top: '50%', left: '30%' }
@@ -42,10 +40,15 @@ export class GameBoardComponent {
 
   onClick = (c: number) => {
     this.info = ""
+    
+    if(this.vg.isRemis()) {
+      this.info = "Das Spiel ist unentschieden ausgegangen."  
+      return 
+    }
 
-
-    if (this.vg.isMill() || this.vg.isRemis()) {
-      this.info = "Das Spiel ist zuende."
+    if (this.vg.isMill() ) {
+      const x = this.vg.state.whoseTurn === "computer" ? "Glückwunsch, du hast gewonnen:" : "Sorry, du hast leider verloren."
+      this.info = "Das Spiel ist zuende. " + x
       return 
     }
 
@@ -78,23 +81,22 @@ export class GameBoardComponent {
   restartGame = () => {
     this.info = ""
     this.openQuestionDialog("Wirklich neu starten?")
-      .pipe(filter(res => res === "ja"))
+      .pipe(filter((res:string) => res === "ja"))
       .subscribe(() => {
         this.vg.restart()
         // just for test
-        const moves = [3, 3, 0, 3, 0, 3, 3, 0] 
-        doMoves(this.vg, moves)
-        // doMoves(this.vg, [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4, 1, 4])
-        // doMoves(this.vg, [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4])
-        // doMoves(this.vg, [3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 6, 5, 1])
-        // doMoves(this.vg,[3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4])
+        // this.vg.doMoves( [3, 3, 0, 3, 0, 3, 3, 0] )   // just for test
+        // this.vg.doMoves([3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4, 1, 4])
+        // this.vg.doMoves([3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4])
+        // this.vg.doMoves([3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 6, 5, 1])
+        // this.vg.doMoves([3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4])
       })
   }
 
   openSettings = () => {
     this.openSettingsDialog(this.vg.origStateOfGame)
-      .pipe(filter(res => !!res))
-      .subscribe(res => this.vg.stateOfGame = res)
+      .pipe(filter((res:any) => !!res))
+      .subscribe((res:any) => this.vg.stateOfGame = res)
   }
 
   getClass = (row: number, col: number): string => {
