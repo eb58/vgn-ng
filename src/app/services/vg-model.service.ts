@@ -4,19 +4,19 @@ import { range, FieldOccupiedType, GR, VgModelStaticService, DIM } from './vg-mo
 const max = (xs: any[], proj: (a: any) => number = x => x) => xs.reduce((a, x) => (proj(x) > (proj)(a) ? x : a), xs[0])
 const clone = (a: {}) => JSON.parse(JSON.stringify(a));
 
-
 export interface STATEOFGAME {
-  whoBegins: string,  // Wer fängt an 'human' oder 'computer'
+  whoBegins: 'human' | 'computer',  // Wer fängt an 'human' oder 'computer'
   maxLev: number,     // Spielstärke
 }
+
 export interface STATE {
   hash: string;
-  moves: number[],             // Spielzüge - Liste der Spalten (0, 1, ... , 6) in die ein Stein geworfen wird.) 
-  board: FieldOccupiedType[];  // Spielfeldbelegung
-  heightCol: number[];         // Höhe der Spalten
-  grState: GR[];               // Zustand der Gewinnreihen
-  whoseTurn: string,           // wer ist dran: human or computer
-  isMill: boolean,             // haben wir 4 in einer Reihe
+  moves: number[],                // Spielzüge - Liste der Spalten (0, 1, ... , 6) in die ein Stein geworfen wird.) 
+  board: FieldOccupiedType[];     // Spielfeldbelegung
+  heightCol: number[];            // Höhe der Spalten
+  grState: GR[];                  // Zustand der Gewinnreihen
+  whoseTurn: 'human' | 'computer' // wer ist dran: human or computer
+  isMill: boolean,                // haben wir 4 in einer Reihe
   value?: number,
 }
 
@@ -28,11 +28,9 @@ export interface MoveType {
 const MAXVAL = 100000;
 const ORDER = [3, 4, 2, 5, 1, 6, 0]
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({  providedIn: 'root'})
 export class VgModelService {
-  origStateOfGame: STATEOFGAME = { whoBegins: 'human',  maxLev: 6 };
+  origStateOfGame: STATEOFGAME = { whoBegins: 'human', maxLev: 6 };
 
   origState: STATE = { // state that is used for evaluating 
     hash: "",
@@ -47,9 +45,11 @@ export class VgModelService {
   state: STATE = clone(this.origState);
   stateOfGame: STATEOFGAME = clone(this.origStateOfGame);
   cntNodesEvaluated = 0;
-  cache:any = {};
+  cache: any = {};
 
-  constructor(private readonly vgmodelstatic: VgModelStaticService) { this.init() }
+  constructor(private readonly vgmodelstatic: VgModelStaticService) {
+    this.init()
+  }
 
   transitionGR = (e: FieldOccupiedType, a: FieldOccupiedType): FieldOccupiedType => { // e eingang   a ausgang
     if (a === FieldOccupiedType.empty)
@@ -70,7 +70,7 @@ export class VgModelService {
       gr.occupiedBy = this.transitionGR(occupy, gr.occupiedBy);
       gr.cnt += (gr.occupiedBy !== FieldOccupiedType.neutral) ? 1 : 0;
       mstate.isMill ||= gr.cnt >= 4;
-      
+
     });
     mstate.hash = mstate.hash + c;
     mstate.moves.push(c);
@@ -96,22 +96,22 @@ export class VgModelService {
   // evaluate state recursively using negamax algorithm!
   negamax = (state: STATE, lev: number, alpha: number, beta: number) => {
     if (this.cache[state.hash]) {
-      console.log("FROM CACHE! Cache size is ", Object.keys(this.cache).length )
+      // console.log("FROM CACHE! Cache size is ", Object.keys(this.cache).length )
       return this.cache[state.hash]
     }
 
     this.cntNodesEvaluated++;
 
-    if (state.isMill){
+    if (state.isMill) {
       this.cache[state.hash] = -(MAXVAL + lev)
       return -(MAXVAL + lev);
-    } 
-   
+    }
+
     if (lev <= 0) return this.computeValOfNode(state);
 
     const allowedMoves = this.generateMoves(state);
     if (allowedMoves.length === 0) return this.computeValOfNode(state);
-      
+
     let value = alpha;
     for (const m of allowedMoves) {
       const clonedState = this.move(m, clone(state));
@@ -138,22 +138,25 @@ export class VgModelService {
 
     if (valuesOfMoves1.filter(m => m.val > -MAXVAL).length === 1) // only one move does not lead to disaster
       return max(valuesOfMoves1, (v) => v.val)
-  
-    // 2. Now with full depth!
-    valuesOfMoves1.sort( (a,b) => b.val - a.val )
-    console.log( "AAA", valuesOfMoves1 )
 
-    const valuesOfMoves2 = valuesOfMoves1.map(x=> x.move).map(move => {
+    // 2. Now with full depth!
+    valuesOfMoves1.sort((a, b) => b.val - a.val)
+    console.log("AAA", valuesOfMoves1)
+
+    const valuesOfMoves2 = valuesOfMoves1.map(x => x.move).map(move => {
       const clonedState = this.move(move, clone(this.state));
       return { move, val: -this.negamax(clonedState, this.stateOfGame.maxLev, -MAXVAL, +MAXVAL) };
     })
+
+    console.log("BBB", valuesOfMoves1)
+
 
     const bestMove = max(valuesOfMoves2, (v) => v.val)
     console.log(
       "COUNTNODES", this.cntNodesEvaluated,
       'BESTMOVE', bestMove?.move,
       'MAXVAL:', bestMove?.val,
-      'VALS:', valuesOfMoves2.reduce((acc: any[], v) => { acc[v.move] = v.val; return acc }, []), 
+      'VALS:', valuesOfMoves2.reduce((acc: any[], v) => { acc[v.move] = v.val; return acc }, []),
       'MOVES-DONE:', this.state.moves
     )
     return bestMove;
@@ -171,17 +174,16 @@ export class VgModelService {
     console.log("\n" + s)
   }
 
-  init = ( moves:number[] = [] ) => {
+  init = (moves: number[] = []) => {
     this.state = clone(this.origState);
     this.stateOfGame = clone(this.origStateOfGame);
     this.doMoves(moves)
   }
 
-  restart = () => this.init();
-  undo = () => this.init( this.state.moves.slice(0, -2));
+  restart = (moves:number[]= []) => this.init(moves);
+  undo = () => this.init(this.state.moves.slice(0, -2));
   doMoves = (moves: number[]): void => moves.forEach(v => this.move(v));
   generateMoves = (state: STATE): number[] => ORDER.filter(c => state.heightCol[c] < DIM.NROW);
   isMill = (): boolean => this.state.isMill
   isRemis = (): boolean => this.state.moves.length === DIM.NCOL * DIM.NROW
-
 }

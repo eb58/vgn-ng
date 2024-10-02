@@ -19,7 +19,7 @@ export class GameBoardComponent {
   NROW = range(DIM.NROW);
   NCOL = range(DIM.NCOL);
 
-  constructor(private readonly vg: VgModelService, public dialog: MatDialog) {}
+  constructor(private readonly vg: VgModelService, public dialog: MatDialog) { }
 
   openDialog(info: string): void {
     const position = { top: '50%', left: '30%' }
@@ -40,24 +40,24 @@ export class GameBoardComponent {
 
   onClick = (c: number) => {
     this.info = ""
-    
-    if(this.vg.isRemis()) {
-      this.info = "Das Spiel ist unentschieden ausgegangen."  
-      return 
+
+    if (this.vg.isRemis()) {
+      this.info = "Das Spiel ist unentschieden ausgegangen."
+      return
     }
 
-    if (this.vg.isMill() ) {
+    if (this.vg.isMill()) {
       const x = this.vg.state.whoseTurn === "computer" ? "Glückwunsch, du hast gewonnen:" : "Sorry, du hast leider verloren."
       this.info = "Das Spiel ist zuende. " + x
-      return 
+      return
     }
 
     const idxBoard = c + DIM.NCOL * this.vg.state.heightCol[c]
-    if( 0 > idxBoard || idxBoard > DIM.NCOL*DIM.NROW ){
+    if (0 > idxBoard || idxBoard > DIM.NCOL * DIM.NROW) {
       this.info = "Kein erlaubter Zug";
-      return 
+      return
     }
-  
+
     if (this.vg.state.whoseTurn === "human") {
       this.vg.move(c)
       if (this.vg.isMill()) this.openDialog("Gratuliere, du hast gewonnen!")
@@ -65,9 +65,9 @@ export class GameBoardComponent {
       if (this.vg.isMill() || this.vg.isRemis()) return
 
       // Führe Zug für Computer aus:
-      const bestMove = this.vg.calcBestMove().move
-      this.vg.move(bestMove)
-      this.info = `Mein letzter Zug: Spalte ${bestMove + 1}`
+      const bestMove = this.vg.calcBestMove()
+      this.vg.move(bestMove.move)
+      this.info = `Mein letzter Zug: Spalte ${bestMove.move + 1}`
       if (this.vg.isMill()) this.openDialog("Bedaure, du hast verloren!")
       if (this.vg.isRemis()) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
     }
@@ -79,24 +79,24 @@ export class GameBoardComponent {
   }
 
   restartGame = () => {
+    const moves: number[] = []
+    // const moves:number[] =  [3, 3, 0, 3, 0, 3, 3, 0]    // just for test
+    // const moves:number[] = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4, 1, 4]
+    // const moves:number[] = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4]
+    // const moves:number[] = ([3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 6, 5, 1]
+    // const moves:number[] = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4]
+
     this.info = ""
     this.openQuestionDialog("Wirklich neu starten?")
-      .pipe(filter((res:string) => res === "ja"))
-      .subscribe(() => {
-        this.vg.restart()
-        // just for test
-        // this.vg.doMoves( [3, 3, 0, 3, 0, 3, 3, 0] )   // just for test
-        // this.vg.doMoves([3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4, 1, 4])
-        // this.vg.doMoves([3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4])
-        // this.vg.doMoves([3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 6, 5, 1])
-        // this.vg.doMoves([3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4])
-      })
+      .pipe(filter((res) => res === "ja"))
+      .subscribe(() => this.vg.restart(moves)
+      )
   }
 
   openSettings = () => {
     this.openSettingsDialog(this.vg.origStateOfGame)
-      .pipe(filter((res:any) => !!res))
-      .subscribe((res:any) => this.vg.stateOfGame = res)
+      .pipe(filter((res) => !!res))
+      .subscribe((res) => this.vg.stateOfGame = res)
   }
 
   getClass = (row: number, col: number): string => {
