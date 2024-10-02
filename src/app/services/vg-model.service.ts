@@ -5,19 +5,18 @@ const max = (xs: any[], proj: (a: any) => number = x => x) => xs.reduce((a, x) =
 const clone = (a: {}) => JSON.parse(JSON.stringify(a));
 
 export interface STATEOFGAME {
-  whoBegins: 'human' | 'computer',  // Wer fängt an 'human' oder 'computer'
-  maxLev: number,     // Spielstärke
+  whoBegins: 'human' | 'ai',
+  maxLev: number,     // skill level
 }
 
 export interface STATE {
   hash: string;
-  moves: number[],                // Spielzüge - Liste der Spalten (0, 1, ... , 6) in die ein Stein geworfen wird.) 
-  board: FieldOccupiedType[];     // Spielfeldbelegung
-  heightCol: number[];            // Höhe der Spalten
-  grState: GR[];                  // Zustand der Gewinnreihen
-  whoseTurn: 'human' | 'computer' // wer ist dran: human or computer
-  isMill: boolean,                // haben wir 4 in einer Reihe
-  value?: number,
+  moves: number[],            // moves - list of columns (0, 1, ... , 6) 
+  board: FieldOccupiedType[]; // state of board
+  heightCols: number[];       // height of columns
+  grState: GR[];              // state of winning rows
+  whoseTurn: 'human' | 'ai'   // who's turn is it: human or ai
+  isMill: boolean,            // we have four in a row!
 }
 
 export interface MoveType {
@@ -28,7 +27,7 @@ export interface MoveType {
 const MAXVAL = 100000;
 const ORDER = [3, 4, 2, 5, 1, 6, 0]
 
-@Injectable({  providedIn: 'root'})
+@Injectable({ providedIn: 'root' })
 export class VgModelService {
   origStateOfGame: STATEOFGAME = { whoBegins: 'human', maxLev: 6 };
 
@@ -36,7 +35,7 @@ export class VgModelService {
     hash: "",
     moves: [],
     board: range(DIM.NCOL * DIM.NROW).map(() => 0),
-    heightCol: range(DIM.NCOL).map(() => 0), // height of cols = [0, 0, 0, ..., 0];
+    heightCols: range(DIM.NCOL).map(() => 0), // height of cols = [0, 0, 0, ..., 0];
     grState: this.vgmodelstatic.gr.map((g) => ({ ...g, occupiedBy: FieldOccupiedType.empty, cnt: 0 })),
     whoseTurn: this.origStateOfGame.whoBegins,
     isMill: false,
@@ -51,22 +50,19 @@ export class VgModelService {
     this.init()
   }
 
-  transitionGR = (e: FieldOccupiedType, a: FieldOccupiedType): FieldOccupiedType => { // e eingang   a ausgang
-    if (a === FieldOccupiedType.empty)
-      return e;
-    if (a === e)
-      return a; // or e
+  transitionGR = (i: FieldOccupiedType, o: FieldOccupiedType): FieldOccupiedType => { // i in / o out
+    if (o === FieldOccupiedType.empty) return i;
+    if (i === o) return i; // or o
     return FieldOccupiedType.neutral;
   }
 
   move = (c: number, mstate: STATE = this.state) => {
-
-    const idxBoard = c + DIM.NCOL * mstate.heightCol[c]
+    const idxBoard = c + DIM.NCOL * mstate.heightCols[c]
 
     // update state of gewinnreihen attached to idxBoard
     this.vgmodelstatic.grs[idxBoard].forEach(i => {
       const gr = mstate.grState[i];
-      const occupy = mstate.whoseTurn === 'human' ? FieldOccupiedType.human : FieldOccupiedType.computer;
+      const occupy = mstate.whoseTurn === 'human' ? FieldOccupiedType.human : FieldOccupiedType.ai;
       gr.occupiedBy = this.transitionGR(occupy, gr.occupiedBy);
       gr.cnt += (gr.occupiedBy !== FieldOccupiedType.neutral) ? 1 : 0;
       mstate.isMill ||= gr.cnt >= 4;
@@ -74,27 +70,27 @@ export class VgModelService {
     });
     mstate.hash = mstate.hash + c;
     mstate.moves.push(c);
-    mstate.board[idxBoard] = mstate.whoseTurn === 'human' ? FieldOccupiedType.human : FieldOccupiedType.computer;
-    mstate.heightCol[c]++;
-    mstate.whoseTurn = mstate.whoseTurn === "human" ? "computer" : "human";
+    mstate.board[idxBoard] = mstate.whoseTurn === 'human' ? FieldOccupiedType.human : FieldOccupiedType.ai;
+    mstate.heightCols[c]++;
+    mstate.whoseTurn = mstate.whoseTurn === "human" ? "ai" : "human";
     return mstate;
   }
 
-  computeValOfNode = (state: STATE) => {
+  computeValOfNodeForHuman = (state: STATE) => {
     const v = state.grState
-      .filter(gr => gr.occupiedBy === FieldOccupiedType.human || gr.occupiedBy === FieldOccupiedType.computer)
+      .filter(gr => gr.occupiedBy === FieldOccupiedType.human || gr.occupiedBy === FieldOccupiedType.ai)
       .reduce((acc: number, gr: GR) => {
         const n = gr.cnt || 1;
         const factor = n === 3 ? gr.val : 1;
         return acc
           + (gr.occupiedBy === FieldOccupiedType.human ? n * n * factor : 0)
-          - (gr.occupiedBy === FieldOccupiedType.computer ? n * n * factor : 0);
+          - (gr.occupiedBy === FieldOccupiedType.ai ? n * n * factor : 0);
       }, 0);
     return state.whoseTurn === 'human' ? v : -v;
   }
 
   // evaluate state recursively using negamax algorithm!
-  negamax = (state: STATE, lev: number, alpha: number, beta: number) => {
+  negamax = (state: STATE, depth: number, alpha: number, beta: number): number => {
     if (this.cache[state.hash]) {
       // console.log("FROM CACHE! Cache size is ", Object.keys(this.cache).length )
       return this.cache[state.hash]
@@ -103,24 +99,24 @@ export class VgModelService {
     this.cntNodesEvaluated++;
 
     if (state.isMill) {
-      this.cache[state.hash] = -(MAXVAL + lev)
-      return -(MAXVAL + lev);
+      this.cache[state.hash] = -MAXVAL - depth
+      return -MAXVAL - depth;
     }
 
-    if (lev <= 0) return this.computeValOfNode(state);
+    if (depth <= 0) return this.computeValOfNodeForHuman(state); // ??? vorzeichen???
 
     const allowedMoves = this.generateMoves(state);
-    if (allowedMoves.length === 0) return this.computeValOfNode(state);
+    if (allowedMoves.length === 0) return this.computeValOfNodeForHuman(state);
 
-    let value = alpha;
+    let score = alpha;
     for (const m of allowedMoves) {
-      const clonedState = this.move(m, clone(state));
-      value = Math.max(value, -this.negamax(clonedState, lev - 1, -beta, -alpha));
-      alpha = Math.max(alpha, value)
+      const newState = this.move(m, clone(state));
+      score = Math.max(score, -this.negamax(newState, depth - 1, -beta, -alpha));
+      alpha = Math.max(alpha, score)
       if (alpha >= beta)
         break;
     }
-    return value;
+    return score;
   }
 
   calcBestMove = (): MoveType => {
@@ -166,7 +162,7 @@ export class VgModelService {
     const s = range(DIM.NROW).reduce((acc1, r) => {
       return acc1 + range(DIM.NCOL).reduce((acc2, c) => {
         const x = c + DIM.NCOL * (DIM.NROW - r - 1);
-        if (this.state.board[x] === FieldOccupiedType.computer) return acc2 + " X ";
+        if (this.state.board[x] === FieldOccupiedType.ai) return acc2 + " X ";
         if (this.state.board[x] === FieldOccupiedType.human) return acc2 + " O "
         return acc2 + " _ ";
       }, "") + "\n"
@@ -180,10 +176,10 @@ export class VgModelService {
     this.doMoves(moves)
   }
 
-  restart = (moves:number[]= []) => this.init(moves);
+  restart = (moves: number[] = []) => this.init(moves);
   undo = () => this.init(this.state.moves.slice(0, -2));
   doMoves = (moves: number[]): void => moves.forEach(v => this.move(v));
-  generateMoves = (state: STATE): number[] => ORDER.filter(c => state.heightCol[c] < DIM.NROW);
+  generateMoves = (state: STATE): number[] => ORDER.filter(c => state.heightCols[c] < DIM.NROW); 
   isMill = (): boolean => this.state.isMill
   isRemis = (): boolean => this.state.moves.length === DIM.NCOL * DIM.NROW
 }

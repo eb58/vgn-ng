@@ -47,12 +47,12 @@ export class GameBoardComponent {
     }
 
     if (this.vg.isMill()) {
-      const x = this.vg.state.whoseTurn === "computer" ? "Glückwunsch, du hast gewonnen:" : "Sorry, du hast leider verloren."
+      const x = this.vg.state.whoseTurn === "ai" ? "Glückwunsch, du hast gewonnen:" : "Sorry, du hast leider verloren."
       this.info = "Das Spiel ist zuende. " + x
       return
     }
 
-    const idxBoard = c + DIM.NCOL * this.vg.state.heightCol[c]
+    const idxBoard = c + DIM.NCOL * this.vg.state.heightCols[c]
     if (0 > idxBoard || idxBoard > DIM.NCOL * DIM.NROW) {
       this.info = "Kein erlaubter Zug";
       return
@@ -102,7 +102,7 @@ export class GameBoardComponent {
   getClass = (row: number, col: number): string => {
     const x = col + DIM.NCOL * (DIM.NROW - row - 1);
     if (this.vg.state.board[x] === FieldOccupiedType.human) return "human"
-    if (this.vg.state.board[x] === FieldOccupiedType.computer) return "computer"
+    if (this.vg.state.board[x] === FieldOccupiedType.ai) return "computer"
     return ""
   }
 }
