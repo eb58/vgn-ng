@@ -59,7 +59,7 @@ export class GameBoardComponent {
         this.info = `Mein letzter Zug: Spalte ${bestMove.move + 1}`
         if (this.vg.isMill()) this.openInfoDialog("Bedaure, du hast verloren!")
         if (this.vg.isRemis()) this.openInfoDialog("Gratuliere, du hast ein Remis geschafft !");
-      }, 1)
+      }, 100)
     }
   }
 
