@@ -3,11 +3,11 @@
     <mat-form-field>
         <mat-label>Spielstärke</mat-label>
         <mat-select [(value)]="data.maxLev">
-            <mat-option value="3">Anfänger</mat-option>
-            <mat-option value="4">Amateur</mat-option>
-            <mat-option value="5">Fortgeschrittener </mat-option>
-            <mat-option value="6">Meister</mat-option>
-            <mat-option value="7">Großmeister</mat-option>
+            <mat-option [value]=3>Anfänger</mat-option>
+            <mat-option [value]=4>Amateur</mat-option>
+            <mat-option [value]=5>Fortgeschrittener </mat-option>
+            <mat-option [value]=6>Meister</mat-option>
+            <mat-option [value]=7>Großmeister</mat-option>
         </mat-select>
     </mat-form-field>
     <br>
@@ -15,7 +15,7 @@
         <mat-label>Wer fängt an</mat-label>
         <mat-select [(value)]="data.whoBegins">
             <mat-option value="human">Spieler</mat-option>
-            <mat-option value="computer">Computer</mat-option>
+            <mat-option value="ai">Computer</mat-option>
         </mat-select>
     </mat-form-field>
 </div>

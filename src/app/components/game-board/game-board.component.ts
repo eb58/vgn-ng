@@ -1,12 +1,11 @@
 import { Component } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { Observable, filter, tap } from 'rxjs';
 import { STATEOFGAME, VgModelService } from '../../services/vg-model.service';
 import { DIM, FieldOccupiedType, range } from '../../services/vg-model-static.service';
 import { InfoDialog } from '../info-dialog/info-dialog.component';
-import { MatDialog } from '@angular/material/dialog';
 import { QuestionDialogComponent } from '../question-dialog/question-dialog.component';
-import { Observable, filter } from 'rxjs';
-import { SettingsDialogComponent } from '../settings-dialog/settings-dialog.component';
-
+import { SettingsDialogComponent, SettingsDialogData } from '../settings-dialog/settings-dialog.component';
 
 @Component({
   selector: 'app-game-board',
@@ -21,22 +20,9 @@ export class GameBoardComponent {
 
   constructor(private readonly vg: VgModelService, public dialog: MatDialog) { }
 
-  openDialog(info: string): void {
-    const position = { top: '50%', left: '30%' }
-    this.dialog.open(InfoDialog, { position, data: { title: "Info", info } });
-  }
-
-  openQuestionDialog(question: string): Observable<any> {
-    const position = { top: '50%', left: '30%' }
-    const dialogRef = this.dialog.open(QuestionDialogComponent, { position, data: { title: "Frage", question } });
-    return dialogRef.afterClosed()
-  }
-
-  openSettingsDialog(stateOfGame: STATEOFGAME): Observable<any> {
-    const position = { top: '50%', left: '30%' }
-    const dialogRef = this.dialog.open(SettingsDialogComponent, { position, data: stateOfGame });
-    return dialogRef.afterClosed()
-  }
+  openInfoDialog = (info: string) => this.dialog.open(InfoDialog, { data: { title: "Info", info } });
+  openQuestionDialog = (question: string): Observable<string> => this.dialog.open(QuestionDialogComponent, { data: { title: "Frage", question } }).afterClosed()
+  openSettingsDialog = (stateOfGame: STATEOFGAME): Observable<SettingsDialogData> => this.dialog.open(SettingsDialogComponent, { data: stateOfGame }).afterClosed()
 
   onClick = (c: number) => {
     this.info = ""
@@ -59,17 +45,21 @@ export class GameBoardComponent {
     }
 
     if (this.vg.state.whoseTurn === "human") {
+      this.info = `Dein letzter Zug: Spalte ${c + 1}`
+
       this.vg.move(c)
-      if (this.vg.isMill()) this.openDialog("Gratuliere, du hast gewonnen!")
-      if (this.vg.isRemis()) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
+      if (this.vg.isMill()) this.openInfoDialog("Gratuliere, du hast gewonnen!")
+      if (this.vg.isRemis()) this.openInfoDialog("Gratuliere, du hast ein Remis geschafft !");
       if (this.vg.isMill() || this.vg.isRemis()) return
 
       // Führe Zug für Computer aus:
-      const bestMove = this.vg.calcBestMove()
-      this.vg.move(bestMove.move)
-      this.info = `Mein letzter Zug: Spalte ${bestMove.move + 1}`
-      if (this.vg.isMill()) this.openDialog("Bedaure, du hast verloren!")
-      if (this.vg.isRemis()) this.openDialog("Gratuliere, du hast ein Remis geschafft !");
+      setTimeout(() => {
+        const bestMove = this.vg.calcBestMove()
+        this.vg.move(bestMove.move)
+        this.info = `Mein letzter Zug: Spalte ${bestMove.move + 1}`
+        if (this.vg.isMill()) this.openInfoDialog("Bedaure, du hast verloren!")
+        if (this.vg.isRemis()) this.openInfoDialog("Gratuliere, du hast ein Remis geschafft !");
+      }, 1)
     }
   }
 
@@ -81,9 +71,9 @@ export class GameBoardComponent {
   restartGame = () => {
     const moves: number[] = []
     // const moves:number[] =  [3, 3, 0, 3, 0, 3, 3, 0]    // just for test
-    // const moves:number[] = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4, 1, 4]
-    // const moves:number[] = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4]
-    // const moves:number[] = ([3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 6, 5, 1]
+    //const moves:number[] = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4, 1, 4]
+    //const moves:number[] = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4]
+    // const moves: number[] = [3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 6]
     // const moves:number[] = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4]
 
     this.info = ""
@@ -93,11 +83,9 @@ export class GameBoardComponent {
       )
   }
 
-  openSettings = () => {
-    this.openSettingsDialog(this.vg.origStateOfGame)
-      .pipe(filter((res) => !!res))
-      .subscribe((res) => this.vg.stateOfGame = res)
-  }
+  openSettings = () => this.openSettingsDialog(this.vg.stateOfGame)
+    .pipe(filter((res) => !!res))
+    .subscribe((res: SettingsDialogData) => this.vg.stateOfGame = { whoBegins: res.whoBegins, maxLev: Number(res.maxLev) })
 
   getClass = (row: number, col: number): string => {
     const x = col + DIM.NCOL * (DIM.NROW - row - 1);

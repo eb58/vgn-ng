@@ -2,9 +2,9 @@ import { Component, Inject } from '@angular/core';
 import { QuestionDialogComponent } from '../question-dialog/question-dialog.component';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 
-export interface DialogData {
-  whoBegins: string;
-  maxLev: string;
+export interface SettingsDialogData {
+  whoBegins: 'human' | 'ai';
+  maxLev: number;
 }
 @Component({
   selector: 'app-settings-dialog',
@@ -14,7 +14,7 @@ export interface DialogData {
 export class SettingsDialogComponent {
   constructor(
     public dialogRef: MatDialogRef<QuestionDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: DialogData,
+    @Inject(MAT_DIALOG_DATA) public data: SettingsDialogData,
   ) { }
 
   onCancel(): void {
