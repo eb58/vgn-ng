@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { range, FieldOccupiedType, GR, VgModelStaticService, DIM } from './vg-model-static.service';
 
 const max = (xs: any[], proj: (a: any) => number = x => x) => xs.reduce((a, x) => (proj(x) > (proj)(a) ? x : a), xs[0])
+const reshape = (m: any, dim: number) => m.reduce((acc: any, x: any, i: number) => (i % dim ? acc[acc.length - 1].push(x) : acc.push([x])) && acc, []);
+
 const clone = (a: {}) => JSON.parse(JSON.stringify(a));
 
 export type Player = 'human' | 'ai'
@@ -82,44 +84,40 @@ export class VgModelService {
     const factor = n === 3 ? gr.val : 1;
     return gr.occupiedBy === FieldOccupiedType.ai ? n * factor : 0 - gr.occupiedBy === FieldOccupiedType.human ? n * factor : 0
   }
+  xvalOfGR = (gr: GR) => gr.val * gr.cnt * gr.occupiedBy === FieldOccupiedType.ai ? 1 : -1
 
   computeValOfNodeForAI = (state: STATE) =>
     state.grState
       .filter(gr => gr.occupiedBy === FieldOccupiedType.human || gr.occupiedBy === FieldOccupiedType.ai)
       .reduce((acc: number, gr: GR) => acc + this.valOfGR(gr), 0);
 
-  negamaxSimple = (state: STATE, depth: number, ignore1: number, ignore2: number): number => { // without alpha/beta-pruning
-    if (state.isMill) return -MAXVAL - depth;
-    if (state.moves.length >= DIM.NCOL * DIM.NROW) return 0
-    if (depth <= 0) return this.computeValOfNodeForAI(state);
-    return this.generateMoves(state).reduce((score, move) => Math.max(score, -this.negamaxSimple(this.move(move, clone(state)), depth - 1, 0, 0)), -MAXVAL)
+  terminalValue = (state: STATE, depth: number, allowedMoves: number[]) => {
+    if (state.isMill) return -MAXVAL + (this.gameSettings.maxLev - depth);
+    if (allowedMoves.length === 0) return 0
+    if (state.grState.filter(gr => gr.occupiedBy === FieldOccupiedType.neutral).length === state.grState.length) return 0;
+    // if (depth === 0) return (state.whoseTurn === 'ai' ? 1 : -1) * this.computeValOfNodeForAI(state)
+    if (depth === 0) return this.computeValOfNodeForAI(state);
+    return undefined
   }
+
+  _minmax = (state: STATE, depth: number, maximizing: boolean): number =>
+    this.terminalValue(state, depth, this.generateMoves(state)) ??
+      (maximizing)
+      ? this.generateMoves(state).reduce((score, move) => Math.max(score, this._minmax(this.move(move, clone(state)), depth - 1, false)), -MAXVAL) :
+      this.generateMoves(state).reduce((score, move) => Math.min(score, this._minmax(this.move(move, clone(state)), depth - 1, true)), +MAXVAL)
+  minmax = (state: STATE, depth: number, ignore1: number, ignore2: number): number => this._minmax(state, depth, true)
+
+  negamaxSimple = (state: STATE, depth: number, ignore1: number, ignore2: number): number =>  // without alpha/beta-pruning
+    this.terminalValue(state, depth, this.generateMoves(state)) ?? this.generateMoves(state).reduce((score, move) => Math.max(score, -this.negamaxSimple(this.move(move, clone(state)), depth - 1, 0, 0)), -MAXVAL)
 
   negamax = (state: STATE, depth: number, alpha: number, beta: number): number => {
     // evaluate state recursively using negamax algorithm! -> wikipedia
-
-    if (this.cache[state.hash]) {
-      // console.log('FROM CACHE! Cache size is ', Object.keys(this.cache).length, state.hash, this.cache[state.hash],  this.cache)
-      return this.cache[state.hash]
-    }
-
     this.cntNodesEvaluated++;
 
-    if (state.isMill) {
-      this.cache[state.hash] = -MAXVAL
-      return -MAXVAL - depth;
-    }
-
-    const heuristicVal = this.computeValOfNodeForAI(state)
-    if (depth <= 0) return state.whoseTurn === 'ai' ? heuristicVal : -heuristicVal;
-
-    if (state.grState.filter(gr => gr.occupiedBy === FieldOccupiedType.neutral).length === state.grState.length) {
-      console.log('AAAAAAAAAAAAAAAAAAAA')
-      return 0;
-    }
-
     const allowedMoves = this.generateMoves(state);
-    if (allowedMoves.length === 0) return 0;
+
+    const tval = this.terminalValue(state, depth, allowedMoves)
+    if (tval != undefined) return tval;
 
     let score = -MAXVAL;
     for (const m of allowedMoves) {
@@ -131,36 +129,44 @@ export class VgModelService {
     return score;
   }
 
+  printStatistics = (valuesOfMoves: any, a: string) => {
+    console.log(a,
+      'BESTMOVE', max(valuesOfMoves, (v) => v.score),
+      'SCORES:', valuesOfMoves.reduce((acc: any, v: any) => { acc[v.move + ''] = v.score; return acc }, {}),
+      'MOVES-DONE:', this.state.moves.join(''),
+      'COUNTNODES', this.cntNodesEvaluated,
+    )
+  }
+
   calcBestMove = (): MoveType => {
     this.cntNodesEvaluated = 0;
     const moves = this.generateMoves(this.state);
 
     // 1. Check if there is a simple Solution...
-    const valuesOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, clone(this.state)), 3, -MAXVAL, +MAXVAL) }));
-    if (max(valuesOfMoves1, (v) => v.score).score >= MAXVAL) return max(valuesOfMoves1, (v) => v.score) // there is a move to win -> take it!
-    if (valuesOfMoves1.filter(m => m.score > -MAXVAL).length === 1) return max(valuesOfMoves1, (v) => v.score) // only one move does not lead to disaster -> take it!
-
+    const valuesOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, clone(this.state)), 2, -MAXVAL, +MAXVAL) }));
+    if (max(valuesOfMoves1, (v) => v.score).score >= MAXVAL-this.gameSettings.maxLev) {// there is a move to win -> take it!
+      this.printStatistics(valuesOfMoves1, "AAA");
+      return max(valuesOfMoves1, (v) => v.score) // there is a move to win -> take it!
+    }
+    if (valuesOfMoves1.filter(m => m.score >= -MAXVAL+this.gameSettings.maxLev).length === 1) {
+      this.printStatistics(valuesOfMoves1, "BBB");
+      return max(valuesOfMoves1, (v) => v.score) // only one move does not lead to disaster -> take it!
+    }
 
     // 2. Now calculate with full depth!
     valuesOfMoves1.sort((a, b) => b.score - a.score) // sort to eval best moves first
-    const valuesOfMoves2 = valuesOfMoves1.map((m: MoveType) => m.move).map(move => ({ move, score: -this.negamax(this.move(move, clone(this.state)), this.gameSettings.maxLev, -MAXVAL, +MAXVAL) }));
-    const bestMove = max(valuesOfMoves2, (v) => v.score)
-
-    console.log(
-      'BESTMOVE', bestMove,
-      'SCORES:', valuesOfMoves2.reduce((acc: any, v) => { acc[v.move + ''] = v.score; return acc }, {}),
-      'MOVES-DONE:', this.state.moves,
-      'COUNTNODES', this.cntNodesEvaluated,
-    )
-    return bestMove;
+    const valuesOfMoves2 = moves.map(move => ({ move, score: -this.negamax(this.move(move, clone(this.state)), this.gameSettings.maxLev, -MAXVAL, +MAXVAL) }));
+    this.printStatistics(valuesOfMoves2, "CCC");
+    return max(valuesOfMoves2, (v) => v.score);
   }
 
-  mapSym = { [FieldOccupiedType.ai]: ' X ', [FieldOccupiedType.human]: ' O ', [FieldOccupiedType.empty]: ' _ ', [FieldOccupiedType.neutral]: ' § ' };
-  fieldSymbol = (x: FieldOccupiedType): string => this.mapSym[x]
+  mapSym = { [FieldOccupiedType.human]: ' H ', [FieldOccupiedType.ai]: ' C ', [FieldOccupiedType.empty]: ' _ ', [FieldOccupiedType.neutral]: ' § ' };
   dumpBoard = (board: FieldOccupiedType[]): string =>
     range(DIM.NROW).reduce(
-      (acc, r) => acc + range(DIM.NCOL).reduce((acc, c) => acc + this.fieldSymbol(board[c + DIM.NCOL * (DIM.NROW - r - 1)]), '') + '\n',
-      '')
+      (acc, r) => acc + range(DIM.NCOL).reduce((acc, c) => acc + this.mapSym[board[c + DIM.NCOL * (DIM.NROW - r - 1)]], '') + '\n',
+      '\n')
+
+  dumpCacheItem = (s: string) => reshape(s.split('').map(x => this.mapSym[Number(x) as FieldOccupiedType]), 7).reverse().map((x: any) => x.join('')).join('\n')
 
   init = (moves: number[] = []) => {
     this.state = clone(this.origState);

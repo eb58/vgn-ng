@@ -25,7 +25,7 @@ export class VgModelStaticService {
     this.initGRs();
   }
 
-  private dump = () => {
+  private readonly dump = () => {
     console.log('GR', this.gr)
     this.gr.forEach(o => console.log('gr: ' + JSON.stringify(o)));
     this.grs.forEach((o, i) => console.log('grs: ', i, o));
