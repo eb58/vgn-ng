@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 
 export const range = (n: number) => [...Array(n).keys()]
 
-export interface GR {
+export type GR = {
   arr: number[], // indizes der Gewinnreihe in das Spielfeld
   val: number,   // Wert der Gewinnreihe (8,4,1)
   cnt: number,   // Anzahl der Steine in Gewinnreihe
