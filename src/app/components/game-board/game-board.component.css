@@ -13,7 +13,7 @@ td {
 }
 
 td.human { background: #a00;}
-td.computer { background: #00a;}
+td.ai { background: #00a;}
 
 #field.button {
     display: block;

@@ -1,11 +1,8 @@
 import { Component, Inject } from '@angular/core';
-import { QuestionDialogComponent } from '../question-dialog/question-dialog.component';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { QuestionDialogComponent } from '../question-dialog/question-dialog.component';
+import { GameSettings } from 'src/app/services/vg-model.service';
 
-export interface SettingsDialogData {
-  whoBegins: 'human' | 'ai';
-  maxLev: number;
-}
 @Component({
   selector: 'app-settings-dialog',
   templateUrl: './settings-dialog.component.html',
@@ -14,7 +11,7 @@ export interface SettingsDialogData {
 export class SettingsDialogComponent {
   constructor(
     public dialogRef: MatDialogRef<QuestionDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: SettingsDialogData,
+    @Inject(MAT_DIALOG_DATA) public data: GameSettings,
   ) { }
 
   onCancel(): void {

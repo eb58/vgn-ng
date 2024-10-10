@@ -26,9 +26,9 @@ export class VgModelStaticService {
   }
 
   private dump = () => {
-    console.log("GR", this.gr)
-    this.gr.forEach(o => console.log("gr: " + JSON.stringify(o)));
-    this.grs.forEach((o, i) => console.log("grs: ", i, o));
+    console.log('GR', this.gr)
+    this.gr.forEach(o => console.log('gr: ' + JSON.stringify(o)));
+    this.grs.forEach((o, i) => console.log('grs: ', i, o));
   }
 
   berechneGRs = (r: number, c: number, dr: number, dc: number) => { // dr = delta row,  dc = delta col
