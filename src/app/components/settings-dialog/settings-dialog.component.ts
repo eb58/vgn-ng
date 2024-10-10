@@ -10,7 +10,7 @@ import { GameSettings } from 'src/app/services/vg-model.service';
 })
 export class SettingsDialogComponent {
   constructor(
-    public dialogRef: MatDialogRef<QuestionDialogComponent>,
+    public dialogRef: MatDialogRef<SettingsDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: GameSettings,
   ) { }
 

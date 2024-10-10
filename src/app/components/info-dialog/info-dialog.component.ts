@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 
-export type DialogData = {
+export type InfoDialogData = {
   title: string;
   info: string;
 }
@@ -19,6 +19,6 @@ export type DialogData = {
 export class InfoDialog {
   constructor(
     public dialogRef: MatDialogRef<InfoDialog>,
-    @Inject(MAT_DIALOG_DATA) public data: DialogData,
+    @Inject(MAT_DIALOG_DATA) public data: InfoDialogData,
   ) { }
 }

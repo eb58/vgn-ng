@@ -1,7 +1,7 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
-export type DialogData =  {
+export type QuestionDialogData =  {
   title: string;
   question: string;
 }
@@ -14,6 +14,6 @@ export type DialogData =  {
 export class QuestionDialogComponent {
   constructor(
     public dialogRef: MatDialogRef<QuestionDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: DialogData,
+    @Inject(MAT_DIALOG_DATA) public data: QuestionDialogData,
   ) { }
 }
