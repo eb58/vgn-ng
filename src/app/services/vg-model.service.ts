@@ -23,24 +23,24 @@ export type STATE = {
 
 export type MoveType = {
   move: number;
-  val: number;
+  score: number;
 }
 
-const MAXVAL = 100000;
-const ORDER = [3, 4, 2, 5, 1, 6, 0]
+const MAXVAL = 1000000;
+const ORDER = Object.freeze([3, 4, 2, 5, 1, 6, 0])
 
 @Injectable({ providedIn: 'root' })
 export class VgModelService {
-  stateOfGame: GameSettings = { whoBegins: 'human', maxLev: 6 };
+  gameSettings: GameSettings = { whoBegins: 'human', maxLev: 5 };
 
   origState: STATE = { // state that is used for evaluating 
-    hash: '',
-    moves: [],
     board: range(DIM.NCOL * DIM.NROW).map(() => 0),
     heightCols: range(DIM.NCOL).map(() => 0), // height of cols = [0, 0, 0, ..., 0];
     grState: this.vgmodelstatic.gr.map((g) => ({ ...g, occupiedBy: FieldOccupiedType.empty, cnt: 0 })),
-    whoseTurn: this.stateOfGame.whoBegins,
+    whoseTurn: this.gameSettings.whoBegins,
     isMill: false,
+    hash: '',
+    moves: [],
   };
 
   state: STATE = clone(this.origState);
@@ -69,18 +69,18 @@ export class VgModelService {
       mstate.isMill ||= gr.cnt >= 4;
 
     });
-    mstate.hash = mstate.hash + c;
     mstate.moves.push(c);
     mstate.board[idxBoard] = mstate.whoseTurn === 'human' ? FieldOccupiedType.human : FieldOccupiedType.ai;
     mstate.heightCols[c]++;
     mstate.whoseTurn = mstate.whoseTurn === 'human' ? 'ai' : 'human';
+    mstate.hash = mstate.board.join('')
     return mstate;
   }
 
   valOfGR = (gr: GR) => {
-    const n = gr.cnt || 1;
+    const n = gr.cnt * gr.cnt || 1;
     const factor = n === 3 ? gr.val : 1;
-    return gr.occupiedBy === FieldOccupiedType.ai ? n * n * factor : 0 - gr.occupiedBy === FieldOccupiedType.human ? n * n * factor : 0
+    return gr.occupiedBy === FieldOccupiedType.ai ? n * factor : 0 - gr.occupiedBy === FieldOccupiedType.human ? n * factor : 0
   }
 
   computeValOfNodeForAI = (state: STATE) =>
@@ -92,21 +92,22 @@ export class VgModelService {
     if (state.isMill) return -MAXVAL - depth;
     if (state.moves.length >= DIM.NCOL * DIM.NROW) return 0
     if (depth <= 0) return this.computeValOfNodeForAI(state);
-    return this.generateMoves(state).reduce((score, move) => Math.max(score, -this.negamaxSimple(this.move(move, clone(state)), depth - 1, 0, 0)), -100000)
+    return this.generateMoves(state).reduce((score, move) => Math.max(score, -this.negamaxSimple(this.move(move, clone(state)), depth - 1, 0, 0)), -MAXVAL)
   }
 
-  // evaluate state recursively using negamax algorithm!
   negamax = (state: STATE, depth: number, alpha: number, beta: number): number => {
+    // evaluate state recursively using negamax algorithm! -> wikipedia
+
     if (this.cache[state.hash]) {
-      // console.log('FROM CACHE! Cache size is ', Object.keys(this.cache).length )
+      // console.log('FROM CACHE! Cache size is ', Object.keys(this.cache).length, state.hash, this.cache[state.hash],  this.cache)
       return this.cache[state.hash]
     }
 
     this.cntNodesEvaluated++;
 
     if (state.isMill) {
-      this.cache[state.hash] = -(MAXVAL + depth)
-      return -(MAXVAL + depth);
+      this.cache[state.hash] = -MAXVAL
+      return -MAXVAL - depth;
     }
 
     const heuristicVal = this.computeValOfNodeForAI(state)
@@ -114,15 +115,15 @@ export class VgModelService {
 
     if (state.grState.filter(gr => gr.occupiedBy === FieldOccupiedType.neutral).length === state.grState.length) {
       console.log('AAAAAAAAAAAAAAAAAAAA')
+      return 0;
     }
 
     const allowedMoves = this.generateMoves(state);
     if (allowedMoves.length === 0) return 0;
 
-    let score = -100000;
+    let score = -MAXVAL;
     for (const m of allowedMoves) {
-      const newState = this.move(m, clone(state));
-      score = Math.max(score, -this.negamax(newState, depth - 1, -beta, -alpha));
+      score = Math.max(score, -this.negamax(this.move(m, clone(state)), depth - 1, -beta, -alpha));
       alpha = Math.max(alpha, score)
       if (alpha >= beta)
         break;
@@ -135,45 +136,21 @@ export class VgModelService {
     const moves = this.generateMoves(this.state);
 
     // 1. Check if there is a simple Solution...
-    const valuesOfMoves1 = moves.map(move => {
-      const clonedState = this.move(move, clone(this.state));
-      const score = -this.negamax(clonedState, 3, -MAXVAL, +MAXVAL)
-      // const x = -this.negamax1(clonedState, 2)
-      // if (x != score) {
-      //   this.dumpBoard(clonedState.board)
-      //   console.log('WWWWWWWWWWWWW', move, x, score)
-      // }
-      return { move, score };
-    })
-    valuesOfMoves1.sort((a, b) => b.score - a.score)
-    // console.log('valuesOfMoves1', valuesOfMoves1)
+    const valuesOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, clone(this.state)), 3, -MAXVAL, +MAXVAL) }));
+    if (max(valuesOfMoves1, (v) => v.score).score >= MAXVAL) return max(valuesOfMoves1, (v) => v.score) // there is a move to win -> take it!
+    if (valuesOfMoves1.filter(m => m.score > -MAXVAL).length === 1) return max(valuesOfMoves1, (v) => v.score) // only one move does not lead to disaster -> take it!
 
-    if (max(valuesOfMoves1, (v) => v.score).score >= MAXVAL) // there is a move to win
-      return max(valuesOfMoves1, (v) => v.score)
-
-    if (valuesOfMoves1.filter(m => m.score > -MAXVAL).length === 1) // only one move does not lead to disaster
-      return max(valuesOfMoves1, (v) => v.val)
 
     // 2. Now calculate with full depth!
-    const valuesOfMoves2 = valuesOfMoves1.map(x => x.move).map(move => {
-      const clonedState = this.move(move, clone(this.state));
-      const score = -this.negamax(clonedState, this.stateOfGame.maxLev, -MAXVAL, +MAXVAL)
-      // const x = -this.negamax1(clonedState, this.stateOfGame.maxLev)
-      // if (x != score) {
-      //   console.log('ZZZZZZZZZZZ', move, x, score)
-      // }
-      return { move, score };
-    })
+    valuesOfMoves1.sort((a, b) => b.score - a.score) // sort to eval best moves first
+    const valuesOfMoves2 = valuesOfMoves1.map((m: MoveType) => m.move).map(move => ({ move, score: -this.negamax(this.move(move, clone(this.state)), this.gameSettings.maxLev, -MAXVAL, +MAXVAL) }));
+    const bestMove = max(valuesOfMoves2, (v) => v.score)
 
-    console.log('valuesOfMoves2', valuesOfMoves2)
-
-    const bestMove = max(valuesOfMoves2, (v) => v.val)
     console.log(
+      'BESTMOVE', bestMove,
+      'SCORES:', valuesOfMoves2.reduce((acc: any, v) => { acc[v.move + ''] = v.score; return acc }, {}),
+      'MOVES-DONE:', this.state.moves,
       'COUNTNODES', this.cntNodesEvaluated,
-      'BESTMOVE', bestMove?.move,
-      'MAXVAL:', bestMove?.score,
-      'VALS:', valuesOfMoves2.reduce((acc: any, v) => { acc[v.move + ''] = v.score; return acc }, {}),
-      'MOVES-DONE:', this.state.moves
     )
     return bestMove;
   }
@@ -192,7 +169,7 @@ export class VgModelService {
 
   restart = (moves: number[] = []) => {
     this.init(moves);
-    this.state.whoseTurn = this.stateOfGame.whoBegins
+    this.state.whoseTurn = this.gameSettings.whoBegins
     if (this.state.whoseTurn === 'ai') this.move(this.calcBestMove().move)
   }
   undo = () => this.init(this.state.moves.slice(0, -2));

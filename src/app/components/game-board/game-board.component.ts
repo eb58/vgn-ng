@@ -83,9 +83,9 @@ export class GameBoardComponent {
       )
   }
 
-  openSettings = () => this.openSettingsDialog(this.vg.stateOfGame)
+  openSettings = () => this.openSettingsDialog(this.vg.gameSettings)
     .pipe(filter((res) => !!res))
-    .subscribe((res: GameSettings) => this.vg.stateOfGame = res)
+    .subscribe((res: GameSettings) => this.vg.gameSettings = res)
 
   getClass = (row: number, col: number): string => {
     const x = col + DIM.NCOL * (DIM.NROW - row - 1);
