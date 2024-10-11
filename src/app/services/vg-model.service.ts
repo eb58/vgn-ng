@@ -45,12 +45,12 @@ export class VgModelService {
     moves: [],
   };
 
-  state: STATE = clone(this.origState);
+  state: STATE;
   cntNodesEvaluated = 0;
   cache: any = {};
 
   constructor(private readonly vgmodelstatic: VgModelStaticService) {
-    this.init()
+    this.state = clone(this.origState);
   }
 
   transitionGR = (i: FieldOccupiedType, o: FieldOccupiedType): FieldOccupiedType => { // i in / o out
@@ -129,35 +129,18 @@ export class VgModelService {
     return score;
   }
 
-  printStatistics = (valuesOfMoves: any, a: string) => {
-    console.log(a,
-      'BESTMOVE', max(valuesOfMoves, (v) => v.score),
-      'SCORES:', valuesOfMoves.reduce((acc: any, v: any) => { acc[v.move + ''] = v.score; return acc }, {}),
-      'MOVES-DONE:', this.state.moves.join(''),
-      'COUNTNODES', this.cntNodesEvaluated,
-    )
-  }
-
-  calcBestMove = (): MoveType => {
+  calcBestMoves = (): MoveType[] => {
+    const cmp = (a: MoveType, b: MoveType) => b.score - a.score
     this.cntNodesEvaluated = 0;
     const moves = this.generateMoves(this.state);
 
     // 1. Check if there is a simple Solution...
-    const valuesOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, clone(this.state)), 2, -MAXVAL, +MAXVAL) }));
-    if (max(valuesOfMoves1, (v) => v.score).score >= MAXVAL-this.gameSettings.maxLev) {// there is a move to win -> take it!
-      this.printStatistics(valuesOfMoves1, "AAA");
-      return max(valuesOfMoves1, (v) => v.score) // there is a move to win -> take it!
-    }
-    if (valuesOfMoves1.filter(m => m.score >= -MAXVAL+this.gameSettings.maxLev).length === 1) {
-      this.printStatistics(valuesOfMoves1, "BBB");
-      return max(valuesOfMoves1, (v) => v.score) // only one move does not lead to disaster -> take it!
-    }
+    const valuesOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, clone(this.state)), 2, -MAXVAL, +MAXVAL) })).toSorted(cmp);
+    if (valuesOfMoves1[0].score >= MAXVAL - this.gameSettings.maxLev) return valuesOfMoves1// there is a move to win -> take it!
+    if (valuesOfMoves1.filter((m: any) => m.score >= -MAXVAL + this.gameSettings.maxLev).length === 1) return valuesOfMoves1 // only one move does not lead to disaster -> take it!
 
     // 2. Now calculate with full depth!
-    valuesOfMoves1.sort((a, b) => b.score - a.score) // sort to eval best moves first
-    const valuesOfMoves2 = moves.map(move => ({ move, score: -this.negamax(this.move(move, clone(this.state)), this.gameSettings.maxLev, -MAXVAL, +MAXVAL) }));
-    this.printStatistics(valuesOfMoves2, "CCC");
-    return max(valuesOfMoves2, (v) => v.score);
+    return moves.map(move => ({ move, score: -this.negamax(this.move(move, clone(this.state)), this.gameSettings.maxLev, -MAXVAL, +MAXVAL) })).toSorted(cmp)
   }
 
   mapSym = { [FieldOccupiedType.human]: ' H ', [FieldOccupiedType.ai]: ' C ', [FieldOccupiedType.empty]: ' _ ', [FieldOccupiedType.neutral]: ' § ' };
@@ -168,19 +151,24 @@ export class VgModelService {
 
   dumpCacheItem = (s: string) => reshape(s.split('').map(x => this.mapSym[Number(x) as FieldOccupiedType]), 7).reverse().map((x: any) => x.join('')).join('\n')
 
-  init = (moves: number[] = []) => {
-    this.state = clone(this.origState);
-    this.doMoves(moves)
-  }
-
-  restart = (moves: number[] = []) => {
-    this.init(moves);
-    this.state.whoseTurn = this.gameSettings.whoBegins
-    if (this.state.whoseTurn === 'ai') this.move(this.calcBestMove().move)
-  }
-  undo = () => this.init(this.state.moves.slice(0, -2));
-  doMoves = (moves: number[]): void => moves.forEach(v => this.move(v));
   generateMoves = (state: STATE): number[] => ORDER.filter(c => state.heightCols[c] < DIM.NROW);
   isMill = (): boolean => this.state.isMill
-  isRemis = (): boolean => this.state.moves.length === DIM.NCOL * DIM.NROW
+  isDraw = (): boolean => this.state.moves.length === DIM.NCOL * DIM.NROW
+  doMoves = (moves: number[]): void => moves.forEach(v => this.move(v));
+  restart = (moves: number[] = []) => {
+    this.state = clone(this.origState);
+    this.state.whoseTurn = this.gameSettings.whoBegins
+    this.doMoves(moves)
+    if (this.state.whoseTurn === 'ai') {
+      const x = this.calcBestMoves()[0]
+      console.log(x)
+      this.move(x.move)
+    }
+  }
+  undo = () => {
+    const moves = this.state.moves.slice(0, -2)
+    this.state = clone(this.origState);
+    this.state.whoseTurn = this.gameSettings.whoBegins
+    this.doMoves(moves)
+  }
 }

@@ -25,7 +25,7 @@ describe('VgModelService', () => {
     expect(vg.state.whoseTurn).toEqual("human");
     expect(vg.state.heightCols).toEqual(range(vg.origState.heightCols.length).map(() => 0));
     expect(vg.isMill()).toBe(false);
-    expect(vg.isRemis()).toBe(false);
+    expect(vg.isDraw()).toBe(false);
   });
 
   it('should work correctly', () => {
@@ -39,12 +39,12 @@ describe('VgModelService', () => {
   it('should work for scenario 1', () => {
     vg.doMoves([0, 6, 0, 6, 0, 6, 1])
     console.log(vg.dumpBoard(vg.state.board));
-    expect(vg.calcBestMove().move).toEqual(6);
+    expect(vg.calcBestMoves()[0].move).toEqual(6);
   });
 
   it('should work for scenario 2', () => {
     vg.doMoves([3, 3, 4])
-    const bm = vg.calcBestMove().move
+    const bm = vg.calcBestMoves()[0].move
     console.log("AAAA", vg.dumpBoard(vg.state.board), bm);
     expect(bm === 2 || bm === 5).toBeTrue();
   });
@@ -52,7 +52,7 @@ describe('VgModelService', () => {
   it('should work for scenario 3', () => {
     vg.doMoves([0, 3, 0, 4, 3])
     console.log(vg.dumpBoard(vg.state.board));
-    const bm = vg.calcBestMove().move
+    const bm = vg.calcBestMoves()[0].move
     expect(bm === 2 || bm === 5).toBeTrue();
   });
 
@@ -60,7 +60,7 @@ describe('VgModelService', () => {
     // vg.gameSettings.maxLev = 6
     vg.doMoves([3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 6, 5, 1, 1])
     console.log(vg.dumpBoard(vg.state.board));
-    const bm = vg.calcBestMove()
+    const bm = vg.calcBestMoves()[0]
     expect(bm.move).toEqual(5);
   });
 
@@ -68,7 +68,7 @@ describe('VgModelService', () => {
     //vg.gameSettings.maxLev = 6
     vg.doMoves([3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4, 4])
     vg.dumpBoard(vg.state.board);
-    const bm = vg.calcBestMove().move
+    const bm = vg.calcBestMoves()[0].move
     expect(bm === 4 || bm === 1).toBeTrue();
   });
 
@@ -78,7 +78,7 @@ describe('VgModelService', () => {
     vg.dumpBoard(vg.state.board);
     expect(vg.state.moves.length).toBe(40)
 
-    const bm = vg.calcBestMove().move
+    const bm = vg.calcBestMoves()[0].move
     expect(bm === 1 || bm === 4).toBeTrue()
   });
 

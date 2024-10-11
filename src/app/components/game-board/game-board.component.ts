@@ -27,7 +27,7 @@ export class GameBoardComponent {
   onClick = (c: number) => {
     this.info = ''
 
-    if (this.vg.isRemis()) {
+    if (this.vg.isDraw()) {
       this.info = 'Das Spiel ist unentschieden ausgegangen.'
       return
     }
@@ -49,16 +49,17 @@ export class GameBoardComponent {
 
       this.vg.move(c)
       if (this.vg.isMill()) this.openInfoDialog('Gratuliere, du hast gewonnen!')
-      if (this.vg.isRemis()) this.openInfoDialog('Gratuliere, du hast ein Remis geschafft !');
-      if (this.vg.isMill() || this.vg.isRemis()) return
+      if (this.vg.isDraw()) this.openInfoDialog('Gratuliere, du hast ein Remis geschafft !');
+      if (this.vg.isMill() || this.vg.isDraw()) return
 
       // AI is drawing
       setTimeout(() => {
-        const bestMove = this.vg.calcBestMove()
-        this.vg.move(bestMove.move)
-        this.info = `Mein letzter Zug: Spalte ${bestMove.move + 1}`
+        const bestMoves = this.vg.calcBestMoves()
+        console.log(   'SCORES:', bestMoves )
+        this.vg.move(bestMoves[0].move)
+        this.info = `Mein letzter Zug: Spalte ${bestMoves[0].move + 1}`
         if (this.vg.isMill()) this.openInfoDialog('Bedaure, du hast verloren!')
-        if (this.vg.isRemis()) this.openInfoDialog('Gratuliere, du hast ein Remis geschafft !');
+        if (this.vg.isDraw()) this.openInfoDialog('Gratuliere, du hast ein Remis geschafft !');
       }, 100)
     }
   }
