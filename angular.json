@@ -61,10 +61,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "ng-four-wins:build:production"
+              "buildTarget": "ng-four-wins:build:production"
             },
             "development": {
-              "browserTarget": "ng-four-wins:build:development"
+              "buildTarget": "ng-four-wins:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -72,7 +72,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "ng-four-wins:build"
+            "buildTarget": "ng-four-wins:build"
           }
         },
         "test": {
