@@ -1,9 +1,7 @@
 import { Injectable } from '@angular/core';
-import { range, FieldOccupiedType, GR, VgModelStaticService, DIM } from './vg-model-static.service';
+import { range, FieldOccupiedType, WinningRow, ConnectFourModelStaticService, DIM } from './model-static.service';
 
-const max = (xs: any[], proj: (a: any) => number = x => x) => xs.reduce((a, x) => (proj(x) > (proj)(a) ? x : a), xs[0])
 const reshape = (m: any, dim: number) => m.reduce((acc: any, x: any, i: number) => (i % dim ? acc[acc.length - 1].push(x) : acc.push([x])) && acc, []);
-
 const clone = (a: {}) => JSON.parse(JSON.stringify(a));
 
 export type Player = 'human' | 'ai'
@@ -18,7 +16,7 @@ export type STATE = {
   moves: number[],            // moves - list of columns (0, 1, ... , 6) 
   board: FieldOccupiedType[]; // state of board
   heightCols: number[];       // height of columns
-  grState: GR[];              // state of winning rows
+  grState: WinningRow[];      // state of winning rows
   whoseTurn: Player           // who's turn is it: human or ai
   isMill: boolean,            // we have four in a row!
 }
@@ -32,13 +30,13 @@ const MAXVAL = 1000000;
 const ORDER = Object.freeze([3, 4, 2, 5, 1, 6, 0])
 
 @Injectable({ providedIn: 'root' })
-export class VgModelService {
+export class ConnectFourModelService {
   gameSettings: GameSettings = { whoBegins: 'human', maxLev: 5 };
 
   origState: STATE = { // state that is used for evaluating 
     board: range(DIM.NCOL * DIM.NROW).map(() => 0),
     heightCols: range(DIM.NCOL).map(() => 0), // height of cols = [0, 0, 0, ..., 0];
-    grState: this.vgmodelstatic.gr.map((g) => ({ ...g, occupiedBy: FieldOccupiedType.empty, cnt: 0 })),
+    grState: this.vgmodelstatic.allWinningRows,
     whoseTurn: this.gameSettings.whoBegins,
     isMill: false,
     hash: '',
@@ -49,7 +47,7 @@ export class VgModelService {
   cntNodesEvaluated = 0;
   cache: any = {};
 
-  constructor(private readonly vgmodelstatic: VgModelStaticService) {
+  constructor(private readonly vgmodelstatic: ConnectFourModelStaticService) {
     this.state = clone(this.origState);
   }
 
@@ -63,7 +61,7 @@ export class VgModelService {
     const idxBoard = c + DIM.NCOL * mstate.heightCols[c]
 
     // update state of gewinnreihen attached to idxBoard
-    this.vgmodelstatic.grs[idxBoard].forEach(i => {
+    this.vgmodelstatic.winningRowsForFields[idxBoard].forEach(i => {
       const gr = mstate.grState[i];
       const occupy = mstate.whoseTurn === 'human' ? FieldOccupiedType.human : FieldOccupiedType.ai;
       gr.occupiedBy = this.transitionGR(occupy, gr.occupiedBy);
@@ -79,17 +77,17 @@ export class VgModelService {
     return mstate;
   }
 
-  valOfGR = (gr: GR) => {
+  valOfGR = (gr: WinningRow) => {
     const n = gr.cnt * gr.cnt || 1;
-    const factor = n === 3 ? gr.val : 1;
+    const factor = n === 3 ? gr.score : 1;
     return gr.occupiedBy === FieldOccupiedType.ai ? n * factor : 0 - gr.occupiedBy === FieldOccupiedType.human ? n * factor : 0
   }
-  xvalOfGR = (gr: GR) => gr.val * gr.cnt * gr.occupiedBy === FieldOccupiedType.ai ? 1 : -1
+  xvalOfGR = (gr: WinningRow) => gr.score * gr.cnt * gr.occupiedBy === FieldOccupiedType.ai ? 1 : -1
 
   computeValOfNodeForAI = (state: STATE) =>
     state.grState
       .filter(gr => gr.occupiedBy === FieldOccupiedType.human || gr.occupiedBy === FieldOccupiedType.ai)
-      .reduce((acc: number, gr: GR) => acc + this.valOfGR(gr), 0);
+      .reduce((acc: number, gr: WinningRow) => acc + this.valOfGR(gr), 0);
 
   terminalValue = (state: STATE, depth: number, allowedMoves: number[]) => {
     if (state.isMill) return -MAXVAL + (this.gameSettings.maxLev - depth);
@@ -155,20 +153,19 @@ export class VgModelService {
   isMill = (): boolean => this.state.isMill
   isDraw = (): boolean => this.state.moves.length === DIM.NCOL * DIM.NROW
   doMoves = (moves: number[]): void => moves.forEach(v => this.move(v));
-  restart = (moves: number[] = []) => {
+  init = (moves: number[]) => {
     this.state = clone(this.origState);
     this.state.whoseTurn = this.gameSettings.whoBegins
     this.doMoves(moves)
+  }
+  restart = (moves: number[] = []) => {
+    this.init(moves)
     if (this.state.whoseTurn === 'ai') {
       const x = this.calcBestMoves()[0]
       console.log(x)
       this.move(x.move)
     }
   }
-  undo = () => {
-    const moves = this.state.moves.slice(0, -2)
-    this.state = clone(this.origState);
-    this.state.whoseTurn = this.gameSettings.whoBegins
-    this.doMoves(moves)
-  }
+  undo = () => this.init(this.state.moves.slice(0, -2))
+
 }

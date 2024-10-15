@@ -1,14 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { VgModelService } from '../app/services/vg-model.service';
-import { range, DIM } from '../app/services/vg-model-static.service';
+import { ConnectFourModelService } from '../app/services/model.service';
+import { range, DIM } from '../app/services/model-static.service';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 describe('VgModelService', () => {
-  let vg: VgModelService;
+  let vg: ConnectFourModelService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({ schemas: [CUSTOM_ELEMENTS_SCHEMA] });
-    vg = TestBed.inject(VgModelService);
+    vg = TestBed.inject(ConnectFourModelService);
   });
 
   test('should be created', () => expect(vg).toBeTruthy());

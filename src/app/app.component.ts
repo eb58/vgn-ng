@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { VgModelService } from './services/vg-model.service';
+import { ConnectFourModelService } from './services/model.service';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -9,7 +9,7 @@ export class AppComponent {
   title = 'Vier gewinnt';
   state;
 
-  constructor(private vg: VgModelService){
+  constructor(private vg: ConnectFourModelService){
     this.state= vg.state
   }
   

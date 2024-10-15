@@ -1,19 +1,18 @@
 import { TestBed } from '@angular/core/testing';
-import { VgModelStaticService } from '../app/services/vg-model-static.service';
+import { ConnectFourModelStaticService } from '../app/services/model-static.service';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 describe('VgModelStaticService', () => {
-  let service: VgModelStaticService;
+  let service: ConnectFourModelStaticService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({ schemas: [CUSTOM_ELEMENTS_SCHEMA] });
-    service = TestBed.inject(VgModelStaticService);
+    service = TestBed.inject(ConnectFourModelStaticService);
   });
 
   test('should be created', () => expect(service).toBeTruthy());
   test('should be initialized correctly', () => {
-    service.initGRs()
-    expect(service.gr.length).toEqual(69)
-    expect(service.grs.length).toEqual(42)
+    expect(service.allWinningRows.length).toEqual(69)
+    expect(service.winningRowsForFields.length).toEqual(42)
   })
 });

@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Observable, filter } from 'rxjs';
-import { GameSettings, VgModelService } from '../../services/vg-model.service';
-import { DIM, FieldOccupiedType, range } from '../../services/vg-model-static.service';
+import { GameSettings, ConnectFourModelService } from '../../services/model.service';
+import { DIM, FieldOccupiedType, range } from '../../services/model-static.service';
 import { InfoDialog } from '../info-dialog/info-dialog.component';
 import { QuestionDialogComponent } from '../question-dialog/question-dialog.component';
 import { SettingsDialogComponent } from '../settings-dialog/settings-dialog.component';
@@ -18,7 +18,7 @@ export class GameBoardComponent {
   NROW = range(DIM.NROW);
   NCOL = range(DIM.NCOL);
 
-  constructor(private readonly vg: VgModelService, public dialog: MatDialog) { }
+  constructor(private readonly vg: ConnectFourModelService, public dialog: MatDialog) { }
 
   openInfoDialog = (info: string) => this.dialog.open(InfoDialog, { data: { title: 'Info', info } });
   openQuestionDialog = (question: string): Observable<string> => this.dialog.open(QuestionDialogComponent, { data: { title: 'Frage', question } }).afterClosed()
