@@ -1,17 +1,14 @@
 import { Injectable } from '@angular/core';
 
 export const range = (n: number) => [...Array(n).keys()]
-
+export enum FieldOccupiedType { empty, human, ai, neutral };
+export const DIM = { NCOL: 7, NROW: 6 };
 export type WinningRow = {
   row: number[], // indices of winning row on board
   score: number,   // score of winining row (8 or 4 or 1)
   cnt: number,   // count of tiles in winning row 
   occupiedBy: FieldOccupiedType // who is occupying winning row 
 }
-
-export enum FieldOccupiedType { empty, human, ai, neutral };
-
-export const DIM = { NCOL: 7, NROW: 6 };
 
 @Injectable({ providedIn: 'root' })
 export class ConnectFourModelStaticService {
@@ -28,8 +25,7 @@ export class ConnectFourModelStaticService {
         ...this.computeWinningRow(r, c, 1, 1),
         ...this.computeWinningRow(r, c, 1, 0),
         ...this.computeWinningRow(r, c, -1, 1)];
-    })
-    )
+    }))
     this.winningRowsForFields = range(DIM.NCOL * DIM.NROW).map(i => this.allWinningRows.reduce((acc: number[], r: WinningRow, j: number) => r.row.includes(i) ? [...acc, j] : acc, []))
   }
 
