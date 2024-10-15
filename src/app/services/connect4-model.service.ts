@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { range, FieldOccupiedType, WinningRow, ConnectFourModelStaticService, DIM } from './model-static.service';
+import { range, FieldOccupiedType, WinningRow, ConnectFourModelStaticService, DIM } from './connect4-model-static.service';
 
 const reshape = (m: any, dim: number) => m.reduce((acc: any, x: any, i: number) => (i % dim ? acc[acc.length - 1].push(x) : acc.push([x])) && acc, []);
 const clone = (a: {}) => JSON.parse(JSON.stringify(a));

@@ -1,7 +1,7 @@
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { QuestionDialogComponent } from '../question-dialog/question-dialog.component';
-import { GameSettings } from 'src/app/services/model.service';
+import { GameSettings } from 'src/app/services/connect4-model.service';
 
 @Component({
   selector: 'app-settings-dialog',

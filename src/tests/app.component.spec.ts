@@ -18,7 +18,7 @@ describe('AppComponent', () => {
   test(`should have as title 'NgFourWins'`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('Vier gewinnt');
+    expect(app.title).toEqual('Connect four');
   });
 
 });
