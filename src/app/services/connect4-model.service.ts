@@ -33,7 +33,6 @@ export type MoveType = {
   score: number;
 }
 
-const MAXVAL = 1000000;
 const ORDER = Object.freeze([3, 4, 2, 5, 1, 6, 0])
 
 @Injectable({ providedIn: 'root' })
@@ -53,6 +52,7 @@ export class ConnectFourModelService {
   state: STATE;
   cntNodesEvaluated = 0;
   cache: any = {};
+  readonly MAXVAL: number = 1000000;
 
   constructor(private readonly vgmodelstatic: ConnectFourModelStaticService) {
     this.state = cloneState(this.origState);
@@ -96,7 +96,7 @@ export class ConnectFourModelService {
 
   scoreOfTerminalStateForAI = (state: STATE, depth: number, allowedMoves: number[]) => {
     if (allowedMoves.length === 0) return 0
-    if (state.isMill) return -MAXVAL;
+    if (state.isMill) return -this.MAXVAL;
     if (depth === 0) return this.computeScoreOfNodeForAI(state);
     return 0
   }
@@ -109,7 +109,7 @@ export class ConnectFourModelService {
       return this.scoreOfTerminalStateForAI(state, depth, allowedMoves)
     }
 
-    let score = -MAXVAL;
+    let score = -this.MAXVAL;
     for (const m of allowedMoves) {
       score = Math.max(score, -this.negamax(this.move(m, cloneState(state)), depth - 1, -beta, -alpha));
       alpha = Math.max(alpha, score)
@@ -124,12 +124,15 @@ export class ConnectFourModelService {
     const moves = this.generateMoves(this.state);
 
     // 1. Check if there is a simple Solution...
-    const scoresOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, -MAXVAL, +MAXVAL) })).toSorted(cmpByScore);
-    if (scoresOfMoves1[0]?.score >= MAXVAL) return scoresOfMoves1// there is a move to win -> take it!
-    if (scoresOfMoves1.filter((m) => m.score >= -MAXVAL).length === 1) return scoresOfMoves1 // only one move does not lead to disaster -> take it!
+    const scoresOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, -this.MAXVAL, +this.MAXVAL) }))
+    if (scoresOfMoves1.filter(m => m.score >= this.MAXVAL).length === 1) return scoresOfMoves1// there is a move to win -> take it!
+    if (scoresOfMoves1.filter((m) => m.score > -this.MAXVAL).length === 1) return scoresOfMoves1 // only one move does not lead to disaster -> take it!
+    if (scoresOfMoves1.filter((m) => m.score > -this.MAXVAL).length === 0) return scoresOfMoves1 // every move does lead to disaster!!!
 
     // 2. Now calculate with full depth!
-    return moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, -MAXVAL, +MAXVAL) })).toSorted(cmpByScore)
+    const ret = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
+    console.log('cntNodesEvaluated:', this.cntNodesEvaluated)
+    return ret;
   }
 
   mapSym = { [FieldOccupiedType.human]: ' H ', [FieldOccupiedType.ai]: ' C ', [FieldOccupiedType.empty]: ' _ ', [FieldOccupiedType.neutral]: ' § ' };
