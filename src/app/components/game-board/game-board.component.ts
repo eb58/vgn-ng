@@ -54,8 +54,8 @@ export class GameBoardComponent {
 
       // AI is drawing
       setTimeout(() => {
-        const bestMoves = this.vg.calcBestMoves()
-        console.log(   'SCORES:', bestMoves )
+        const bestMoves = this.vg.calcBestMoves(this.vg.state)
+        console.log( 'SCORES:', bestMoves )
         this.vg.move(bestMoves[0].move)
         this.info = `Mein letzter Zug: Spalte ${bestMoves[0].move + 1}`
         if (this.vg.isMill()) this.openInfoDialog('Bedaure, du hast verloren!')

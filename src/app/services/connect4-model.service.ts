@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { range, FieldOccupiedType, WinningRow, ConnectFourModelStaticService, DIM } from './connect4-model-static.service';
 
+const cmpByScore = (a: MoveType, b: MoveType) => b.score - a.score
 const reshape = (m: any, dim: number) => m.reduce((acc: any, x: any, i: number) => (i % dim ? acc[acc.length - 1].push(x) : acc.push([x])) && acc, []);
 const cloneState = (s: STATE) => ({
   ...s,
@@ -90,22 +91,25 @@ export class ConnectFourModelService {
       .filter(wr => wr.occupiedBy === FieldOccupiedType.human || wr.occupiedBy === FieldOccupiedType.ai)
       .reduce((acc: number, wr: WinningRow) => acc + this.scoreOfWinningRow(wr), 0);
 
-  scoreOfTerminalState = (state: STATE, depth: number, allowedMoves: number[]) => {
-    if (state.isMill) return -MAXVAL + (this.gameSettings.maxLev - depth);
-    if (depth === 0) return this.computeScoreOfNodeForAI(state);
+
+  isTerminalState = (state: STATE, allowedMoves: number[], depth: number) => allowedMoves.length === 0 || state.isMill || depth === 0;
+
+  scoreOfTerminalStateForAI = (state: STATE, depth: number, allowedMoves: number[]) => {
     if (allowedMoves.length === 0) return 0
-    return undefined
+    if (state.isMill) return -MAXVAL;
+    if (depth === 0) return this.computeScoreOfNodeForAI(state);
+    return 0
   }
 
   negamax = (state: STATE, depth: number, alpha: number, beta: number): number => { // evaluate state recursively using negamax algorithm! -> wikipedia
-    this.cntNodesEvaluated++;
-
     const allowedMoves = this.generateMoves(state);
 
-    let score = this.scoreOfTerminalState(state, depth, allowedMoves)
-    if (score != undefined) return score;
+    if (this.isTerminalState(state, allowedMoves, depth)) {
+      this.cntNodesEvaluated++;
+      return this.scoreOfTerminalStateForAI(state, depth, allowedMoves)
+    }
 
-    score = -MAXVAL;
+    let score = -MAXVAL;
     for (const m of allowedMoves) {
       score = Math.max(score, -this.negamax(this.move(m, cloneState(state)), depth - 1, -beta, -alpha));
       alpha = Math.max(alpha, score)
@@ -116,24 +120,23 @@ export class ConnectFourModelService {
   }
 
   calcBestMoves = (): MoveType[] => {
-    const cmp = (a: MoveType, b: MoveType) => b.score - a.score
     this.cntNodesEvaluated = 0;
     const moves = this.generateMoves(this.state);
 
     // 1. Check if there is a simple Solution...
-    const scoresOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, -MAXVAL, +MAXVAL) })).toSorted(cmp);
-    if (scoresOfMoves1[0].score >= MAXVAL - this.gameSettings.maxLev) return scoresOfMoves1// there is a move to win -> take it!
-    if (scoresOfMoves1.filter((m: any) => m.score >= -MAXVAL + this.gameSettings.maxLev).length === 1) return scoresOfMoves1 // only one move does not lead to disaster -> take it!
+    const scoresOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, -MAXVAL, +MAXVAL) })).toSorted(cmpByScore);
+    if (scoresOfMoves1[0]?.score >= MAXVAL) return scoresOfMoves1// there is a move to win -> take it!
+    if (scoresOfMoves1.filter((m) => m.score >= -MAXVAL).length === 1) return scoresOfMoves1 // only one move does not lead to disaster -> take it!
 
     // 2. Now calculate with full depth!
-    return moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, -MAXVAL, +MAXVAL) })).toSorted(cmp)
+    return moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, -MAXVAL, +MAXVAL) })).toSorted(cmpByScore)
   }
 
   mapSym = { [FieldOccupiedType.human]: ' H ', [FieldOccupiedType.ai]: ' C ', [FieldOccupiedType.empty]: ' _ ', [FieldOccupiedType.neutral]: ' § ' };
-  dumpBoard = (board: FieldOccupiedType[]): string =>
-    range(DIM.NROW).reduce(
+  dumpBoard = (board: FieldOccupiedType[], s = ""): void =>
+    console.log(s, range(DIM.NROW).reduce(
       (acc, r) => acc + range(DIM.NCOL).reduce((acc, c) => acc + this.mapSym[board[c + DIM.NCOL * (DIM.NROW - r - 1)]], '') + '\n',
-      '\n')
+      '\n'))
 
   dumpCacheItem = (s: string) => reshape(s.split('').map(x => this.mapSym[Number(x) as FieldOccupiedType]), 7).reverse().map((x: any) => x.join('')).join('\n')
 
