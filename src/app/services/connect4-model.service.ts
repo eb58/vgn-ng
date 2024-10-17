@@ -123,14 +123,16 @@ export class ConnectFourModelService {
     this.cntNodesEvaluated = 0;
     const moves = this.generateMoves(this.state);
 
-    // 1. Check if there is a simple Solution...
-    const scoresOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, -this.MAXVAL, +this.MAXVAL) }))
-    if (scoresOfMoves1.filter(m => m.score >= this.MAXVAL).length === 1) return scoresOfMoves1// there is a move to win -> take it!
-    if (scoresOfMoves1.filter((m) => m.score > -this.MAXVAL).length === 1) return scoresOfMoves1 // only one move does not lead to disaster -> take it!
-    if (scoresOfMoves1.filter((m) => m.score > -this.MAXVAL).length === 0) return scoresOfMoves1 // every move does lead to disaster!!!
+    // 1. Check if there is a simple Solution with depth 3...
+    const scoresOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
+    if (scoresOfMoves1.filter(m => m.score >= this.MAXVAL).length >= 1) return scoresOfMoves1 // there are moves to win!
+    if (scoresOfMoves1.filter((m) => m.score > -this.MAXVAL).length <= 1) return scoresOfMoves1 // at most one move does not lead to disaster 
 
-    // 2. Now calculate with full depth!
-    const ret = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
+    // 2. Now calculate with full depth but we dont look at moves that are doomed to fail!
+    const ret = scoresOfMoves1
+    .filter((m) => m.score > -this.MAXVAL)
+    .map(x => x.move)
+    .map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
     console.log('cntNodesEvaluated:', this.cntNodesEvaluated)
     return ret;
   }
