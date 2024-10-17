@@ -9,6 +9,7 @@ describe('ConnectFourModelService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({ schemas: [CUSTOM_ELEMENTS_SCHEMA] });
     vg = TestBed.inject(ConnectFourModelService);
+    vg.gameSettings.maxLev = 5
   });
 
   test('should be created', () => expect(vg).toBeTruthy());
@@ -58,21 +59,21 @@ describe('ConnectFourModelService', () => {
     // _  _  _  C  _  _  _
     // _  _  _  H  H  _  _
     const m = vg.calcBestMoves()
-    console.log(m)
+    // console.log("AAA", m)
     expect(m[0].move === 2 || m[0].move === 5).toBeTruthy();
   });
 
   test('scenario 3', () => {
-    vg.doMoves([3, 3, 4, 3, 5])
+    vg.doMoves([3, 3, 4, 0, 5])
+    // _  _  _  _  _  _  _
     // _  _  _  _  _  _  _
     // _  _  _  _  _  _  _
     // _  _  _  _  _  _  _
     // _  _  _  C  _  _  _
-    // _  _  _  C  _  _  _
-    // _  _  _  H  H  H  _
+    // C  _  _  H  H  H  _
     const m = vg.calcBestMoves()
-    console.log(m)
-    expect(m[0].score <= vg.MAXVAL).toBeTruthy();
+    // console.log(m)
+    expect(m.every(x => x.score === -vg.MAXVAL)).toBeTruthy(); // no chance to win!
   });
 
   test('scenario 4', () => {
@@ -97,7 +98,7 @@ describe('ConnectFourModelService', () => {
     // H  H  C  C  C  H  _
     // H  C  C  H  C  C  C
     const m = vg.calcBestMoves()
-    console.log(m)
+    // console.log(m)
     expect(m[0].move).toEqual(5);
     expect(m[0].score).toEqual(vg.MAXVAL);
   });
@@ -124,9 +125,35 @@ describe('ConnectFourModelService', () => {
     // H  H  C  H  C  C  C
     expect(vg.state.moves.length).toBe(40)
     const m = vg.calcBestMoves()
-    console.log(m)
+    expect(m.length).toBe(2)
     expect(m[0].move === 1 || m[0].move === 4).toBeTruthy()
+    expect(m[0].score).toBe(0)
+    expect(m[1].score).toBe(0)
   });
 
+  test('scenario 8', () => {
+    vg.doMoves([2, 6, 4])
+    // _  _  _  _  _  _  _
+    // _  _  _  _  _  _  _
+    // _  _  _  _  _  _  _
+    // _  _  _  _  _  _  _
+    // _  _  C  _  _  _  _
+    // _  _  H  _  H  _  _
+    const m = vg.calcBestMoves()
+    expect(m[0].move).toEqual(3);
+  });
+
+  test('scenario 9', () => {
+    vg.gameSettings.whoBegins = 'ai'
+    vg.doMoves([2, 6, 4])
+    // _  _  _  _  _  _  _
+    // _  _  _  _  _  _  _
+    // _  _  _  _  _  _  _
+    // _  _  _  _  _  _  _
+    // _  _  H  _  _  _  _
+    // _  _  C  _  C  _  _
+    const m = vg.calcBestMoves()
+    expect(m[0].move).toEqual(3);
+  });
 
 });
