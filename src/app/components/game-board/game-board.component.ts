@@ -55,7 +55,7 @@ export class GameBoardComponent {
       // AI is drawing
       setTimeout(() => {
         const bestMoves = this.vg.calcBestMoves()
-        console.log( 'SCORES:', bestMoves )
+        console.log('SCORES:', bestMoves.reduce((acc, m) => acc + `${m.move}:${m.score} `, ''))
         this.vg.move(bestMoves[0].move)
         this.info = `Mein letzter Zug: Spalte ${bestMoves[0].move + 1}`
         if (this.vg.isMill()) this.openInfoDialog('Bedaure, du hast verloren!')
@@ -70,12 +70,12 @@ export class GameBoardComponent {
   }
 
   restartGame = () => {
-    const moves: number[] = []
-    // const moves:number[] =  [3, 3, 0, 3, 0, 3, 3, 0]    // just for test
-    //const moves:number[] = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4, 1, 4]
-    //const moves:number[] = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4]
-    // const moves: number[] = [3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 6]
-    // const moves:number[] = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4]
+    let moves: number[] = []
+    // const moves =  [3, 3, 0, 3, 0, 3, 3, 0]    // just for test
+    //const moves = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4, 1, 4]
+    //const moves = [3, 2, 3, 3, 3, 6, 3, 6, 3, 6, 6, 2, 1, 2, 2, 2, 2, 6, 6, 5, 5, 5, 5, 4, 5, 5, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 4, 4]
+    // const moves = [3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 6]
+    moves = [3, 3, 3, 3, 3, 2, 3, 4, 0, 2, 0, 2, 2, 4, 4, 0, 4, 4, 4, 5, 5, 5, 5, 2]
 
     this.info = ''
     this.openQuestionDialog('Wirklich neu starten?')

@@ -8,7 +8,7 @@ const cloneState = (s: STATE) => ({
   moves: [...s.moves],
   board: [...s.board],
   heightCols: [...s.heightCols],
-  winningRowsState: s.winningRowsState.map((wr: WinningRow) => ({ ...wr, row: [...wr.row] }))
+  winningRowsState: s.winningRowsState.map((wr: WinningRow) => ({ ...wr }))
 })
 
 type Player = 'human' | 'ai'
@@ -37,7 +37,7 @@ const ORDER = Object.freeze([3, 4, 2, 5, 1, 6, 0])
 
 @Injectable({ providedIn: 'root' })
 export class ConnectFourModelService {
-  gameSettings: GameSettings = { whoBegins: 'human', maxLev: 5 };
+  gameSettings: GameSettings = { whoBegins: 'human', maxLev: 6 };
 
   origState: STATE = { // state that is used for evaluating 
     board: range(DIM.NCOL * DIM.NROW).map(() => 0),
@@ -91,24 +91,16 @@ export class ConnectFourModelService {
       .filter(wr => wr.occupiedBy === FieldOccupiedType.human || wr.occupiedBy === FieldOccupiedType.ai)
       .reduce((acc: number, wr: WinningRow) => acc + this.scoreOfWinningRow(wr), 0);
 
-
-  isTerminalState = (state: STATE, allowedMoves: number[], depth: number) => allowedMoves.length === 0 || state.isMill || depth === 0;
-
-  scoreOfTerminalStateForAI = (state: STATE, depth: number, allowedMoves: number[]) => {
-    if (allowedMoves.length === 0) return 0
-    if (state.isMill) return -this.MAXVAL;
-    if (depth === 0) return this.computeScoreOfNodeForAI(state);
-    return 0
-  }
-
   negamax = (state: STATE, depth: number, alpha: number, beta: number): number => { // evaluate state recursively using negamax algorithm! -> wikipedia
-    if (this.cache[state.hash]) return this.cache[state.hash]
+    // if (this.cache[state.hash]) return this.cache[state.hash]
+
+    this.cntNodesEvaluated++;
     const allowedMoves = this.generateMoves(state);
 
-    if (this.isTerminalState(state, allowedMoves, depth)) {
-      this.cntNodesEvaluated++;
-      return this.scoreOfTerminalStateForAI(state, depth, allowedMoves)
-    }
+    if (state.isMill) return -this.MAXVAL
+    if (allowedMoves.length === 0) return 0
+    if (depth === 0) return this.computeScoreOfNodeForAI(state);
+    // if (depth === 0) return (state.whoseTurn === 'ai' ? 1 : -1) * this.computeScoreOfNodeForAI(state);
 
     let score = -this.MAXVAL;
     for (const m of allowedMoves) {
@@ -129,23 +121,20 @@ export class ConnectFourModelService {
     const moves = this.generateMoves(this.state);
 
     // 1. Check if there is a simple Solution with depth 3...
-    const scoresOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
-    if (scoresOfMoves1.filter(m => m.score >= this.MAXVAL).length >= 1) return scoresOfMoves1 // there are moves to win!
-    if (scoresOfMoves1.filter((m) => m.score > -this.MAXVAL).length <= 1) return scoresOfMoves1 // at most one move does not lead to disaster 
+    const scoresOfMoves = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
+    if (scoresOfMoves.filter(m => m.score >= this.MAXVAL - 10).length >= 1) return scoresOfMoves // there are moves to win!
+    if (scoresOfMoves.filter(m => m.score > -this.MAXVAL + 10).length <= 1) return scoresOfMoves // at most one move does not lead to disaster 
 
     // 2. Now calculate with full depth but we dont look at moves that are doomed to fail!
-    const ret = scoresOfMoves1
-      .filter((m) => m.score > -this.MAXVAL)
-      .map(x => x.move)
-      .map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
-    console.log('cntNodesEvaluated:', this.cntNodesEvaluated)
+    const ret = scoresOfMoves.map(x => x.move).map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
+    // console.log('cntNodesEvaluated:', this.cntNodesEvaluated)
     return ret;
   }
 
   mapSym = { [FieldOccupiedType.human]: ' H ', [FieldOccupiedType.ai]: ' C ', [FieldOccupiedType.empty]: ' _ ', [FieldOccupiedType.neutral]: ' § ' };
-  dumpBoard = (board: FieldOccupiedType[], s = ""): void =>
+  dumpBoard = (s = ""): void =>
     console.log(s, range(DIM.NROW).reduce(
-      (acc, r) => acc + range(DIM.NCOL).reduce((acc, c) => acc + this.mapSym[board[c + DIM.NCOL * (DIM.NROW - r - 1)]], '') + '\n',
+      (acc, r) => acc + range(DIM.NCOL).reduce((acc, c) => acc + this.mapSym[this.state.board[c + DIM.NCOL * (DIM.NROW - r - 1)]], '') + '\n',
       '\n'))
 
   dumpCacheItem = (s: string) => reshape(s.split('').map(x => this.mapSym[Number(x) as FieldOccupiedType]), 7).reverse().map((x: any) => x.join('')).join('\n')
@@ -163,7 +152,7 @@ export class ConnectFourModelService {
     this.init(moves)
     if (this.state.whoseTurn === 'ai') {
       const x = this.calcBestMoves()[0]
-      console.log(x)
+      console.log(JSON.stringify(x))
       this.move(x.move)
     }
   }
