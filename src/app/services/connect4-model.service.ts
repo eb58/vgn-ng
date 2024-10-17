@@ -102,6 +102,7 @@ export class ConnectFourModelService {
   }
 
   negamax = (state: STATE, depth: number, alpha: number, beta: number): number => { // evaluate state recursively using negamax algorithm! -> wikipedia
+    if (this.cache[state.hash]) return this.cache[state.hash]
     const allowedMoves = this.generateMoves(state);
 
     if (this.isTerminalState(state, allowedMoves, depth)) {
@@ -115,6 +116,10 @@ export class ConnectFourModelService {
       alpha = Math.max(alpha, score)
       if (alpha >= beta)
         break;
+    }
+    if (Math.abs(score) === this.MAXVAL) {
+      this.cache[state.hash] = score
+      // console.log("Cachesize:", Object.keys(this.cache).length)
     }
     return score;
   }
@@ -130,9 +135,9 @@ export class ConnectFourModelService {
 
     // 2. Now calculate with full depth but we dont look at moves that are doomed to fail!
     const ret = scoresOfMoves1
-    .filter((m) => m.score > -this.MAXVAL)
-    .map(x => x.move)
-    .map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
+      .filter((m) => m.score > -this.MAXVAL)
+      .map(x => x.move)
+      .map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
     console.log('cntNodesEvaluated:', this.cntNodesEvaluated)
     return ret;
   }
