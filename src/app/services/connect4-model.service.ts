@@ -2,7 +2,13 @@ import { Injectable } from '@angular/core';
 import { range, FieldOccupiedType, WinningRow, ConnectFourModelStaticService, DIM } from './connect4-model-static.service';
 
 const reshape = (m: any, dim: number) => m.reduce((acc: any, x: any, i: number) => (i % dim ? acc[acc.length - 1].push(x) : acc.push([x])) && acc, []);
-const clone = (a: {}) => JSON.parse(JSON.stringify(a));
+const cloneState = (s: STATE) => ({
+  ...s,
+  moves: [...s.moves],
+  board: [...s.board],
+  heightCols: [...s.heightCols],
+  winningRowsState: s.winningRowsState.map((wr: WinningRow) => ({ ...wr, row: [...wr.row] }))
+})
 
 type Player = 'human' | 'ai'
 
@@ -48,7 +54,7 @@ export class ConnectFourModelService {
   cache: any = {};
 
   constructor(private readonly vgmodelstatic: ConnectFourModelStaticService) {
-    this.state = clone(this.origState);
+    this.state = cloneState(this.origState);
   }
 
   transitionGR = (i: FieldOccupiedType, o: FieldOccupiedType): FieldOccupiedType => { // i in / o out
@@ -101,7 +107,7 @@ export class ConnectFourModelService {
 
     score = -MAXVAL;
     for (const m of allowedMoves) {
-      score = Math.max(score, -this.negamax(this.move(m, clone(state)), depth - 1, -beta, -alpha));
+      score = Math.max(score, -this.negamax(this.move(m, cloneState(state)), depth - 1, -beta, -alpha));
       alpha = Math.max(alpha, score)
       if (alpha >= beta)
         break;
@@ -115,12 +121,12 @@ export class ConnectFourModelService {
     const moves = this.generateMoves(this.state);
 
     // 1. Check if there is a simple Solution...
-    const scoresOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, clone(this.state)), 2, -MAXVAL, +MAXVAL) })).toSorted(cmp);
+    const scoresOfMoves1 = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, -MAXVAL, +MAXVAL) })).toSorted(cmp);
     if (scoresOfMoves1[0].score >= MAXVAL - this.gameSettings.maxLev) return scoresOfMoves1// there is a move to win -> take it!
     if (scoresOfMoves1.filter((m: any) => m.score >= -MAXVAL + this.gameSettings.maxLev).length === 1) return scoresOfMoves1 // only one move does not lead to disaster -> take it!
 
     // 2. Now calculate with full depth!
-    return moves.map(move => ({ move, score: -this.negamax(this.move(move, clone(this.state)), this.gameSettings.maxLev, -MAXVAL, +MAXVAL) })).toSorted(cmp)
+    return moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, -MAXVAL, +MAXVAL) })).toSorted(cmp)
   }
 
   mapSym = { [FieldOccupiedType.human]: ' H ', [FieldOccupiedType.ai]: ' C ', [FieldOccupiedType.empty]: ' _ ', [FieldOccupiedType.neutral]: ' § ' };
@@ -136,7 +142,7 @@ export class ConnectFourModelService {
   isDraw = (): boolean => this.state.moves.length === DIM.NCOL * DIM.NROW
   doMoves = (moves: number[]): void => moves.forEach(v => this.move(v));
   init = (moves: number[]) => {
-    this.state = clone(this.origState);
+    this.state = cloneState(this.origState);
     this.state.whoseTurn = this.gameSettings.whoBegins
     this.doMoves(moves)
   }
