@@ -11,8 +11,8 @@ describe('tests for loosing', () => {
   });
 
   test('scenario 1', () => {
-    vg.gameSettings.whoBegins = 'ai'
-    vg.doMoves([0, 3, 0, 4, 1, 5 ])
+    vg.state.whoseTurn = 'ai'
+    vg.doMoves([0, 3, 0, 4, 1, 5])
     // _  _  _  _  _  _  _
     // _  _  _  _  _  _  _
     // _  _  _  _  _  _  _
@@ -20,9 +20,8 @@ describe('tests for loosing', () => {
     // C  _  _  _  _  _  _
     // C  C  _  H  H  H  _
     const m = vg.calcBestMoves()
-    // console.log(m)
-    expect(vg.state.whoseTurn==='ai')
-    expect(m.every(x => x.score <= -vg.MAXVAL)).toBeTruthy(); // no chance to win!
+    expect(vg.state.whoseTurn === 'ai')
+    expect(m.every(x => x.score === -vg.MAXVAL + 1)).toBeTruthy(); // no chance to win!
   });
 
   test('scenario 2', () => {
@@ -34,9 +33,21 @@ describe('tests for loosing', () => {
     // _  _  _  C  _  _  _
     // C  _  _  H  H  H  _
     const m = vg.calcBestMoves()
-    // console.log(m)
-    expect(vg.state.whoseTurn==='ai')
-    expect(m.every(x => x.score <= -vg.MAXVAL)).toBeTruthy(); // no chance to win!
+    expect(vg.state.whoseTurn === 'ai')
+    expect(m.every(x => x.score === -vg.MAXVAL + 1)).toBeTruthy(); // no chance to win!
   });
+
+  test('scenario 1', () => {
+    vg.doMoves([3, 3, 4])
+    // _  _  _  _  _  _  _
+    // _  _  _  _  _  _  _
+    // _  _  _  _  _  _  _
+    // _  _  _  _  _  _  _
+    // _  _  _  C  _  _  _
+    // _  _  _  H  H  _  _
+    const m = vg.calcBestMoves()
+    expect(m[0].move === 2 || m[0].move === 5).toBeTruthy();
+  });
+
 
 });

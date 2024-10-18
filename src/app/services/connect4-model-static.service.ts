@@ -31,7 +31,7 @@ export class ConnectFourModelStaticService {
     while (r >= 0 && r < DIM.NROW && c >= 0 && c < DIM.NCOL && row.length < 4) { row.push(c + DIM.NCOL * r); c += dc; r += dr; }
     return row.length < 4 ? [] : [{
       row,
-      score: dr === 0 ? 8 : (dc !== 0 ? 4 : 0), // horizontal is the best (8) skew is quit good (4) vertical is not so strong as horizontal or skew ones (1)
+      score: dr === 0 ? 8 : (dc !== 0 ? 4 : 1), // horizontal is the best (8) skew is quit good (4) vertical is not so strong as horizontal or skew ones (1)
       cnt: 0,
       occupiedBy: FieldOccupiedType.empty
     }];

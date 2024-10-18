@@ -67,7 +67,7 @@ export class ConnectFourModelService {
   move = (c: number, mstate: STATE = this.state) => {
     const idxBoard = c + DIM.NCOL * mstate.heightCols[c]
 
-    // update state of gewinnreihen attached to idxBoard
+    // update state of winning rows attached to idxBoard
     this.vgmodelstatic.winningRowsForFields[idxBoard].forEach(i => {
       const wrState = mstate.winningRowsState[i];
       const occupy = mstate.whoseTurn === 'human' ? FieldOccupiedType.human : FieldOccupiedType.ai;
@@ -89,22 +89,21 @@ export class ConnectFourModelService {
   computeScoreOfNodeForAI = (state: STATE) =>
     state.winningRowsState
       .filter(wr => wr.occupiedBy === FieldOccupiedType.human || wr.occupiedBy === FieldOccupiedType.ai)
-      .reduce((acc: number, wr: WinningRow) => acc + this.scoreOfWinningRow(wr), 0);
+      .reduce((acc: number, wr: WinningRow) => acc + (state.whoseTurn === 'ai' ? 1 : -1) * this.scoreOfWinningRow(wr), 0);
 
-  negamax = (state: STATE, depth: number, alpha: number, beta: number): number => { // evaluate state recursively using negamax algorithm! -> wikipedia
+  negamax = (state: STATE, depth: number, actDepth: number, alpha: number, beta: number): number => { // evaluate state recursively using negamax algorithm! -> wikipedia
     // if (this.cache[state.hash]) return this.cache[state.hash]
 
     this.cntNodesEvaluated++;
     const allowedMoves = this.generateMoves(state);
 
-    if (state.isMill) return -this.MAXVAL
+    if (state.isMill) return -this.MAXVAL + actDepth 
     if (allowedMoves.length === 0) return 0
-    if (depth === 0) return this.computeScoreOfNodeForAI(state);
-    // if (depth === 0) return (state.whoseTurn === 'ai' ? 1 : -1) * this.computeScoreOfNodeForAI(state);
+    if (actDepth === depth) return this.computeScoreOfNodeForAI(state);
 
     let score = -this.MAXVAL;
     for (const m of allowedMoves) {
-      score = Math.max(score, -this.negamax(this.move(m, cloneState(state)), depth - 1, -beta, -alpha));
+      score = Math.max(score, -this.negamax(this.move(m, cloneState(state)), depth, actDepth + 1, -beta, -alpha));
       alpha = Math.max(alpha, score)
       if (alpha >= beta)
         break;
@@ -117,16 +116,17 @@ export class ConnectFourModelService {
   }
 
   calcBestMoves = (): MoveType[] => {
+    if (this.state.whoseTurn !== 'ai') throw Error("It must be the AI's turn!")
     this.cntNodesEvaluated = 0;
     const moves = this.generateMoves(this.state);
 
     // 1. Check if there is a simple Solution with depth 3...
-    const scoresOfMoves = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
-    if (scoresOfMoves.filter(m => m.score >= this.MAXVAL - 10).length >= 1) return scoresOfMoves // there are moves to win!
-    if (scoresOfMoves.filter(m => m.score > -this.MAXVAL + 10).length <= 1) return scoresOfMoves // at most one move does not lead to disaster 
+    const scoresOfMoves = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, 0, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
+    if (scoresOfMoves.filter(m => m.score >= this.MAXVAL - 20).length >= 1) return scoresOfMoves // there are moves to win!
+    if (scoresOfMoves.filter(m => m.score > -this.MAXVAL + 20).length <= 1) return scoresOfMoves // at most one move does not lead to disaster 
 
     // 2. Now calculate with full depth but we dont look at moves that are doomed to fail!
-    const ret = scoresOfMoves.map(x => x.move).map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
+    const ret = scoresOfMoves.map(x => x.move).map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, 0, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
     // console.log('cntNodesEvaluated:', this.cntNodesEvaluated)
     return ret;
   }
