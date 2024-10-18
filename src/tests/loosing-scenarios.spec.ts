@@ -34,4 +34,32 @@ describe('tests for loosing', () => {
     const m = vg.calcBestMoves()
     expect(m.every(x => x.score === -vg.MAXVAL + 1)).toBeTruthy(); // no chance to win!
   });
+
+  test('scenario 3', () => {
+    vg.state.whoseTurn = 'ai'
+    vg.doMoves([0, 4, 0, 3, 2, 3, 0, 0, 1, 2, 4, 3, 3, 2])
+    // _  _  _  _  _  _  _
+    // _  _  _  _  _  _  _
+    // H  _  _  C  _  _  _
+    // C  _  H  H  _  _  _
+    // C  _  H  H  C  _  _
+    // C  C  C  H  H  _  _
+    const m = vg.calcBestMoves()
+    expect(m[0].move).toBe(3); expect(m[0].score).toBe(-vg.MAXVAL + 3);
+  });
+
+  test('scenario 4', () => {
+    vg.gameSettings.maxDepth = 8;
+    vg.state.whoseTurn = 'ai'
+    vg.doMoves([0, 4, 0, 3, 2, 3, 0, 0, 1, 2])
+    // _  _  _  _  _  _  _
+    // _  _  _  _  _  _  _
+    // H  _  _  _  _  _  _
+    // C  _  _  _  _  _  _ 
+    // C  _  H  H  _  _  _ 
+    // C  C  C  H  H  _  _
+    const m = vg.calcBestMoves()
+    expect(m[0].move).toBe(4); expect(m[0].score).toBe(-vg.MAXVAL + 5);
+  });
+
 });

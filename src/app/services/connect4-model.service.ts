@@ -15,7 +15,7 @@ type Player = 'human' | 'ai'
 
 export type GameSettings = {
   whoBegins: Player,
-  maxLev: number,     // maximum skill level
+  maxDepth: number,     // skill level
 }
 
 export type STATE = {
@@ -37,7 +37,7 @@ const ORDER = Object.freeze([3, 4, 2, 5, 1, 6, 0])
 
 @Injectable({ providedIn: 'root' })
 export class ConnectFourModelService {
-  gameSettings: GameSettings = { whoBegins: 'human', maxLev: 6 };
+  gameSettings: GameSettings = { whoBegins: 'human', maxDepth: 6 };
 
   origState: STATE = { // state that is used for evaluating 
     board: range(DIM.NCOL * DIM.NROW).map(() => 0),
@@ -91,7 +91,7 @@ export class ConnectFourModelService {
       .filter(wr => wr.occupiedBy === FieldOccupiedType.human || wr.occupiedBy === FieldOccupiedType.ai)
       .reduce((acc: number, wr: WinningRow) => acc + (state.whoseTurn === 'ai' ? 1 : -1) * this.scoreOfWinningRow(wr), 0);
 
-  negamax = (state: STATE, depth: number, actDepth: number, alpha: number, beta: number): number => { // evaluate state recursively using negamax algorithm! -> wikipedia
+  negamax = (state: STATE, maxDepth: number, actDepth: number, alpha: number, beta: number): number => { // evaluate state recursively using negamax algorithm! -> wikipedia
     // if (this.cache[state.hash]) return this.cache[state.hash]
 
     this.cntNodesEvaluated++;
@@ -99,11 +99,11 @@ export class ConnectFourModelService {
 
     if (state.isMill) return -this.MAXVAL + actDepth 
     if (allowedMoves.length === 0) return 0
-    if (actDepth === depth) return this.computeScoreOfNodeForAI(state);
+    if (actDepth === maxDepth) return this.computeScoreOfNodeForAI(state);
 
     let score = -this.MAXVAL;
     for (const m of allowedMoves) {
-      score = Math.max(score, -this.negamax(this.move(m, cloneState(state)), depth, actDepth + 1, -beta, -alpha));
+      score = Math.max(score, -this.negamax(this.move(m, cloneState(state)), maxDepth, actDepth + 1, -beta, -alpha));
       alpha = Math.max(alpha, score)
       if (alpha >= beta)
         break;
@@ -121,12 +121,12 @@ export class ConnectFourModelService {
     const moves = this.generateMoves(this.state);
 
     // 1. Check if there is a simple Solution with depth 3...
-    const scoresOfMoves = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, 0, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
-    if (scoresOfMoves.filter(m => m.score >= this.MAXVAL - 20).length >= 1) return scoresOfMoves // there are moves to win!
-    if (scoresOfMoves.filter(m => m.score > -this.MAXVAL + 20).length <= 1) return scoresOfMoves // at most one move does not lead to disaster 
+    // const scoresOfMoves = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, 0, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
+    // if (scoresOfMoves.filter(m => m.score >= this.MAXVAL - 20).length >= 1) return scoresOfMoves // there are moves to win!
+    // if (scoresOfMoves.filter(m => m.score > -this.MAXVAL + 20).length <= 1) return scoresOfMoves // at most one move does not lead to disaster 
 
     // 2. Now calculate with full depth but we dont look at moves that are doomed to fail!
-    const ret = scoresOfMoves.map(x => x.move).map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxLev, 0, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
+    const ret = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxDepth, 0, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
     // console.log('cntNodesEvaluated:', this.cntNodesEvaluated)
     return ret;
   }
