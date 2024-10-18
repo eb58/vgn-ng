@@ -92,12 +92,12 @@ export class ConnectFourModelService {
       .reduce((acc: number, wr: WinningRow) => acc + (state.whoseTurn === 'ai' ? 1 : -1) * this.scoreOfWinningRow(wr), 0);
 
   negamax = (state: STATE, maxDepth: number, actDepth: number, alpha: number, beta: number): number => { // evaluate state recursively using negamax algorithm! -> wikipedia
-    // if (this.cache[state.hash]) return this.cache[state.hash]
+    if (this.cache[state.hash + '|' + actDepth]) return this.cache[state.hash + '|' + actDepth]
 
     this.cntNodesEvaluated++;
     const allowedMoves = this.generateMoves(state);
 
-    if (state.isMill) return -this.MAXVAL + actDepth 
+    if (state.isMill) return -this.MAXVAL + actDepth
     if (allowedMoves.length === 0) return 0
     if (actDepth === maxDepth) return this.computeScoreOfNodeForAI(state);
 
@@ -108,8 +108,8 @@ export class ConnectFourModelService {
       if (alpha >= beta)
         break;
     }
-    if (Math.abs(score) === this.MAXVAL) {
-      this.cache[state.hash] = score
+    if (Math.abs(score) > this.MAXVAL - 20) {
+      this.cache[state.hash + '|' + actDepth] = score
       // console.log("Cachesize:", Object.keys(this.cache).length)
     }
     return score;
