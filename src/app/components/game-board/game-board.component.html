@@ -1,6 +1,6 @@
 <mat-card>
     <mat-card-content>
-        <h2>Vier Gewinnt</h2>
+        <h2>Connect Four</h2>
     </mat-card-content>
     <mat-card-content>
         <table id="field" aria-describedby="board">
@@ -13,8 +13,8 @@
         <p>{{info}}</p>
     </mat-card-content>
     <mat-card-actions>
-        <button mat-fab color="primary" matTooltip="Neu starten" (click)="restartGame()"><mat-icon>cancel</mat-icon></button>
-        <button mat-fab color="primary" matTooltip="Zug zurücknehmen" (click)="undoMove()"><mat-icon>undo</mat-icon></button>
-        <button mat-fab color="primary" matTooltip="Einstellungen"(click)="openSettings()"><mat-icon>settings</mat-icon></button>
+        <button mat-fab color="primary" matTooltip="Restart" (click)="restartGame()"><mat-icon>cancel</mat-icon></button>
+        <button mat-fab color="primary" matTooltip="Undo last move" (click)="undoMove()"><mat-icon>undo</mat-icon></button>
+        <button mat-fab color="primary" matTooltip="Settings"(click)="openSettings()"><mat-icon>settings</mat-icon></button>
     </mat-card-actions>
 </mat-card>
