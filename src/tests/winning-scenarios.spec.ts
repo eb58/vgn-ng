@@ -77,4 +77,14 @@ describe('tests for winning ', () => {
     expect(m[0].score).toBe(vg.MAXVAL - 6);
   });
 
+  test('scenario 7', () => {
+    vg.doMoves([0, 4, 0, 3, 2, 3, 0, 0, 1])
+    vg.dumpBoard()
+    const m = vg.calcBestMoves()
+    console.log(m)
+    expect(m[0].move).toBe(2); expect(m[0].score).toBe(vg.MAXVAL - 6);
+    expect(m[1].move).toBe(4); expect(m[1].score).toBe(vg.MAXVAL - 8);
+    expect(m[2].move).toBe(6); expect(m[2].score).toBe(vg.MAXVAL - 8);
+  });
+
 });
