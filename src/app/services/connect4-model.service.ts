@@ -121,9 +121,9 @@ export class ConnectFourModelService {
     const moves = this.generateMoves(this.state);
 
     // 1. Check if there is a simple Solution with depth 3...
-    // const scoresOfMoves = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, 0, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
-    // if (scoresOfMoves.filter(m => m.score >= this.MAXVAL - 20).length >= 1) return scoresOfMoves // there are moves to win!
-    // if (scoresOfMoves.filter(m => m.score > -this.MAXVAL + 20).length <= 1) return scoresOfMoves // at most one move does not lead to disaster 
+    const scoresOfMoves = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), 3, 0, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)
+    if (scoresOfMoves.filter(m => m.score >= this.MAXVAL - 20).length >= 1) return scoresOfMoves // there are moves to win!
+    if (scoresOfMoves.filter(m => m.score > -this.MAXVAL + 20).length == 0) return scoresOfMoves // all moves does lead to disaster 
 
     // 2. Now calculate with full depth but we dont look at moves that are doomed to fail!
     const ret = moves.map(move => ({ move, score: -this.negamax(this.move(move, cloneState(this.state)), this.gameSettings.maxDepth, 0, -this.MAXVAL, +this.MAXVAL) })).toSorted(cmpByScore)

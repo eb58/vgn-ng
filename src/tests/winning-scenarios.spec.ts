@@ -87,8 +87,6 @@ describe('tests for winning ', () => {
     // H  H  H  C  C  _  _
     const m = vg.calcBestMoves()
     expect(m[0].move).toBe(2); expect(m[0].score).toBe(vg.MAXVAL - 6);
-    expect(m[1].move).toBe(4); expect(m[1].score).toBe(vg.MAXVAL - 8);
-    expect(m[2].move).toBe(6); expect(m[2].score).toBe(vg.MAXVAL - 8);
   });
 
 });
