@@ -60,10 +60,21 @@ describe('tests for winning ', () => {
     // H  H  C  C  C  H  _
     // H  C  C  H  C  C  C
     const m = vg.calcBestMoves()
-    // console.log(m)
-    expect(vg.state.whoseTurn === 'ai')
     expect(m[0].move).toBe(5);
     expect(m[0].score).toBe(vg.MAXVAL);
+  });
+
+  test('scenario 6', () => {
+    vg.doMoves([0, 4, 0, 3, 0, 0, 2, 3, 3, 4, 2])
+    // _  _  _  _  _  _  _
+    // _  _  _  _  _  _  _
+    // C  _  _  _  _  _  _
+    // H  _  _  H  _  _  _
+    // H  _  H  C  C  _  _
+    // H  _  H  C  C  _  _
+    const m = vg.calcBestMoves()
+    expect(m[0].move).toBe(6);
+    expect(m[0].score).toBe(vg.MAXVAL - 6);
   });
 
 });
